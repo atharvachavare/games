@@ -1,0 +1,715 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d0d12">
+<title>Mafia — Party Game</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕵️</text></svg>">
+<style>
+  :root {
+    --bg: #0d0d12; --panel: #17171f; --panel2: #20202b; --line: #2c2c3a;
+    --text: #ececf3; --muted: #9a9ab0; --red: #e5484d; --red-d: #7a1f22;
+    --green: #30a46c; --blue: #3e8ef7; --gold: #f5b544;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  body { min-height: 100vh; min-height: 100dvh; }
+  main { max-width: 520px; margin: 0 auto; padding: 20px 16px 40px; }
+  h1 { font-size: 34px; margin: 8px 0 4px; letter-spacing: .5px; }
+  h2 { font-size: 22px; margin: 0 0 6px; }
+  p { margin: 6px 0; }
+  .muted { color: var(--muted); }
+  .center { text-align: center; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 18px; margin: 14px 0; }
+  .row { display: flex; gap: 10px; }
+  .row > * { flex: 1; }
+  input { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid var(--line);
+    background: var(--panel2); color: var(--text); font-size: 17px; outline: none; }
+  input:focus { border-color: var(--blue); }
+  input.code { text-transform: uppercase; letter-spacing: 6px; text-align: center; font-weight: 700; }
+  button { width: 100%; padding: 14px 16px; border-radius: 12px; border: 0; font-size: 17px; font-weight: 600;
+    background: var(--blue); color: #fff; cursor: pointer; margin-top: 10px; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button.secondary { background: var(--panel2); color: var(--text); border: 1px solid var(--line); }
+  button.danger { background: var(--red); }
+  button.good { background: var(--green); }
+  .label { font-size: 13px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); margin: 14px 0 6px; }
+  .roomcode { font-size: 46px; font-weight: 800; letter-spacing: 10px; text-align: center; margin: 4px 0; }
+  .players { list-style: none; padding: 0; margin: 8px 0 0; }
+  .players li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px;
+    background: var(--panel2); margin-bottom: 6px; }
+  .players li.dead { opacity: .45; text-decoration: line-through; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--green); flex: none; }
+  .dot.off { background: #555; }
+  .tag { margin-left: auto; font-size: 12px; padding: 2px 8px; border-radius: 99px; background: var(--line); color: var(--muted); }
+  .tag.me { background: var(--blue); color: #fff; }
+  .targets { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+  .targets button { margin: 0; background: var(--panel2); border: 2px solid var(--line); color: var(--text); padding: 16px 8px; }
+  .targets button.sel { border-color: var(--gold); background: #2d2615; }
+  .targets button .n { display: block; font-size: 12px; color: var(--muted); font-weight: 500; margin-top: 2px; }
+  .rolecard { border-radius: 18px; padding: 22px; text-align: center; cursor: pointer; user-select: none;
+    border: 1px solid var(--line); background: var(--panel); }
+  .rolecard .emoji { font-size: 56px; line-height: 1.1; }
+  .rolecard .rname { font-size: 26px; font-weight: 800; margin-top: 4px; }
+  .rolecard.mafia { background: linear-gradient(160deg, #3a1214, #17171f); border-color: var(--red-d); }
+  .rolecard.doctor { background: linear-gradient(160deg, #0f2f22, #17171f); border-color: #1d5a3f; }
+  .rolecard.citizen { background: linear-gradient(160deg, #142640, #17171f); border-color: #24446e; }
+  .phase { text-align: center; padding: 26px 18px; }
+  .phase .big { font-size: 64px; line-height: 1; }
+  .banner { padding: 16px; border-radius: 14px; text-align: center; font-weight: 700; font-size: 19px; margin: 14px 0; }
+  .banner.bad { background: #3a1214; border: 1px solid var(--red-d); }
+  .banner.good { background: #0f2f22; border: 1px solid #1d5a3f; }
+  .banner.neutral { background: var(--panel2); border: 1px solid var(--line); }
+  .tally { list-style: none; padding: 0; margin: 8px 0 0; }
+  .tally li { display: flex; justify-content: space-between; padding: 8px 12px; background: var(--panel2); border-radius: 10px; margin-bottom: 6px; }
+  .err { color: #ff8a8d; min-height: 1.2em; margin-top: 8px; }
+  .status { position: fixed; top: 0; left: 0; right: 0; text-align: center; font-size: 13px; padding: 6px; background: #3a2a0a; color: var(--gold); display: none; z-index: 5; }
+  .small { font-size: 13px; }
+  a { color: var(--blue); }
+  .rules li { margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<div class="status" id="status"></div>
+<main id="app"></main>
+
+<script src="peerjs.min.js"></script>
+<script>
+(() => {
+'use strict';
+
+/* ---------------- constants & helpers ---------------- */
+const PREFIX = 'mafia-party-game-v1-';
+const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const MIN_PLAYERS = 3;
+const ROLES = {
+  mafia:   { emoji: '🔪', name: 'Mafia',   desc: 'Each night, pick someone to eliminate. Don\'t get voted out!' },
+  doctor:  { emoji: '💉', name: 'Doctor',  desc: 'Each night, pick someone to save. If it\'s the mafia\'s target, they live.' },
+  citizen: { emoji: '🧑', name: 'Citizen', desc: 'Find the mafia during the day and vote them out.' },
+};
+const PEER_OPTS = {
+  debug: 0,
+  config: { iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:global.stun.twilio.com:3478' },
+    { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
+  ] },
+};
+
+const $app = document.getElementById('app');
+const $status = document.getElementById('status');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const store = {
+  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  del(k) { try { localStorage.removeItem(k); } catch {} },
+};
+const ssGet = k => { try { return JSON.parse(sessionStorage.getItem(k)); } catch { return null; } };
+const ssSet = (k, v) => { try { sessionStorage.setItem(k, JSON.stringify(v)); } catch {} };
+const ssDel = k => { try { sessionStorage.removeItem(k); } catch {} };
+const randCode = () => Array.from({ length: 4 }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join('');
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36));
+
+let clientId = ssGet('mafia.clientId');
+if (!clientId) { clientId = uid(); ssSet('mafia.clientId', clientId); }
+
+function setStatus(msg) { $status.textContent = msg || ''; $status.style.display = msg ? 'block' : 'none'; }
+
+/* ---------------- app-level state ---------------- */
+let mode = 'home';        // home | host | client
+let view = null;          // the personalised view currently displayed
+let ui = { selected: null, revealed: false, error: '' };
+let peer = null;
+let hostConn = null;      // client: connection to host
+let roomCode = null;
+
+/* =========================================================
+   HOST (authoritative game engine)
+   ========================================================= */
+let G = null;              // game state (host only)
+const conns = new Map();   // clientId -> DataConnection
+
+function newGame(code, hostName) {
+  return {
+    code, phase: 'lobby', round: 0, hostId: clientId,
+    players: [{ id: clientId, name: hostName, role: null, alive: true }],
+    mafiaTarget: null, doctorSave: null, lastNight: null,
+    votes: {}, verdict: null, winner: null,
+  };
+}
+
+const P = id => G.players.find(p => p.id === id);
+const alive = () => G.players.filter(p => p.alive);
+
+function persistHost() { if (G) ssSet('mafia.host', G); }
+
+function viewFor(id) {
+  const me = P(id);
+  const over = G.phase === 'over';
+  const players = G.players.map(p => ({
+    id: p.id, name: p.name, alive: p.alive,
+    connected: p.id === G.hostId ? true : conns.has(p.id) && conns.get(p.id).open,
+    role: (over || p.id === id) ? p.role : null,
+  }));
+  const v = {
+    code: G.code, phase: G.phase, round: G.round, hostId: G.hostId, me: id,
+    players, lastNight: G.lastNight, verdict: G.verdict, winner: G.winner,
+    votedCount: Object.keys(G.votes).length, aliveCount: alive().length,
+    myVote: G.votes[id] || null,
+  };
+  // private night information
+  if (me && me.role === 'mafia') v.myKill = G.mafiaTarget;
+  if (me && me.role === 'doctor') v.mySave = G.doctorSave;
+  if (G.phase === 'verdict' || over) v.tally = G.tally || null;
+  return v;
+}
+
+function broadcast() {
+  persistHost();
+  for (const [id, c] of conns) if (c.open) { try { c.send({ t: 'state', view: viewFor(id) }); } catch {} }
+  render(viewFor(clientId));
+}
+
+function checkWinner() {
+  const a = alive();
+  const mafiaAlive = a.filter(p => p.role === 'mafia').length;
+  const others = a.length - mafiaAlive;
+  if (mafiaAlive === 0) return 'citizens';
+  if (mafiaAlive >= others) return 'mafia';
+  return null;
+}
+
+function finish(w) { G.winner = w; G.phase = 'over'; }
+
+function resolveNight() {
+  const target = G.mafiaTarget;
+  const saved = target && G.doctorSave === target;
+  if (target && !saved) P(target).alive = false;
+  G.lastNight = { round: G.round, victim: target, victimName: target ? P(target).name : null, saved: !!saved };
+  G.phase = 'morning';
+  const w = checkWinner();
+  if (w) finish(w);
+}
+
+function hostHandle(fromId, msg) {
+  const me = P(fromId);
+  const err = m => { if (fromId === clientId) { ui.error = m; render(viewFor(clientId)); } else { const c = conns.get(fromId); c && c.open && c.send({ t: 'error', msg: m }); } };
+  const isHost = fromId === G.hostId;
+
+  switch (msg.t) {
+    case 'start': {
+      if (!isHost || G.phase !== 'lobby') return;
+      // drop players who left the lobby
+      G.players = G.players.filter(p => p.id === G.hostId || (conns.has(p.id) && conns.get(p.id).open));
+      if (G.players.length < MIN_PLAYERS) return err(`Need at least ${MIN_PLAYERS} players.`);
+      const order = shuffle(G.players.map(p => p.id));
+      G.players.forEach(p => { p.alive = true; p.role = 'citizen'; });
+      P(order[0]).role = 'mafia';
+      P(order[1]).role = 'doctor';
+      G.round = 1; G.phase = 'night_mafia';
+      G.mafiaTarget = G.doctorSave = null; G.lastNight = null; G.votes = {}; G.verdict = null; G.winner = null; G.tally = null;
+      break;
+    }
+    case 'kill': {
+      if (G.phase !== 'night_mafia' || !me || !me.alive || me.role !== 'mafia') return;
+      const t = P(msg.target);
+      if (!t || !t.alive || t.id === me.id) return err('Pick a valid target.');
+      G.mafiaTarget = t.id;
+      const doc = G.players.find(p => p.role === 'doctor' && p.alive);
+      if (doc) G.phase = 'night_doctor'; else resolveNight();
+      break;
+    }
+    case 'save': {
+      if (G.phase !== 'night_doctor' || !me || !me.alive || me.role !== 'doctor') return;
+      const t = P(msg.target);
+      if (!t || !t.alive) return err('Pick a valid player.');
+      G.doctorSave = t.id;
+      resolveNight();
+      break;
+    }
+    case 'startVote': {
+      if (!isHost || G.phase !== 'morning') return;
+      G.phase = 'voting'; G.votes = {};
+      break;
+    }
+    case 'vote': {
+      if (G.phase !== 'voting' || !me || !me.alive) return;
+      if (msg.target !== 'skip') { const t = P(msg.target); if (!t || !t.alive || t.id === me.id) return err('Pick a valid player.'); }
+      G.votes[me.id] = msg.target;
+      if (alive().every(p => G.votes[p.id])) tallyVotes();
+      break;
+    }
+    case 'forceTally': {
+      if (!isHost || G.phase !== 'voting') return;
+      tallyVotes();
+      break;
+    }
+    case 'nextNight': {
+      if (!isHost || G.phase !== 'verdict') return;
+      G.round++; G.phase = 'night_mafia'; G.mafiaTarget = G.doctorSave = null; G.votes = {}; G.verdict = null; G.tally = null;
+      break;
+    }
+    case 'playAgain': {
+      if (!isHost || G.phase !== 'over') return;
+      G.phase = 'lobby'; G.round = 0;
+      G.players = G.players.filter(p => p.id === G.hostId || (conns.has(p.id) && conns.get(p.id).open));
+      G.players.forEach(p => { p.role = null; p.alive = true; });
+      G.mafiaTarget = G.doctorSave = null; G.lastNight = null; G.votes = {}; G.verdict = null; G.winner = null; G.tally = null;
+      break;
+    }
+    case 'kick': {
+      if (!isHost || G.phase !== 'lobby' || msg.target === G.hostId) return;
+      G.players = G.players.filter(p => p.id !== msg.target);
+      const c = conns.get(msg.target);
+      if (c) { try { c.send({ t: 'kicked' }); } catch {} setTimeout(() => c.close(), 200); conns.delete(msg.target); }
+      break;
+    }
+    default: return;
+  }
+  if (fromId === clientId) ui.error = '';
+  broadcast();
+}
+
+function tallyVotes() {
+  const counts = {};
+  for (const [, t] of Object.entries(G.votes)) counts[t] = (counts[t] || 0) + 1;
+  const tally = Object.entries(counts)
+    .map(([id, n]) => ({ id, name: id === 'skip' ? 'Skip' : P(id).name, n }))
+    .sort((a, b) => b.n - a.n);
+  G.tally = tally;
+  const top = tally[0];
+  const tie = tally.length > 1 && tally[1].n === top.n;
+  if (!top || tie || top.id === 'skip') {
+    G.verdict = { eliminated: null, tie, skipped: top && top.id === 'skip' && !tie };
+  } else {
+    const p = P(top.id);
+    p.alive = false;
+    G.verdict = { eliminated: p.id, name: p.name, wasMafia: p.role === 'mafia' };
+  }
+  G.phase = 'verdict';
+  const w = checkWinner();
+  if (w) finish(w);
+}
+
+function hostOnConnection(conn) {
+  let cid = null;
+  conn.on('data', msg => {
+    if (!msg || typeof msg !== 'object') return;
+    if (msg.t === 'join') {
+      cid = String(msg.clientId || '').slice(0, 64);
+      const name = String(msg.name || '').trim().slice(0, 20);
+      if (!cid || !name) return conn.send({ t: 'error', msg: 'Invalid name.', fatal: true });
+      const existing = P(cid);
+      if (existing) {
+        // reconnect
+        const old = conns.get(cid); if (old && old !== conn) try { old.close(); } catch {}
+        conns.set(cid, conn);
+        if (G.phase === 'lobby') existing.name = name;
+      } else {
+        if (G.phase !== 'lobby') { conn.send({ t: 'error', msg: 'This game has already started. Wait for the next round.', fatal: true }); return; }
+        if (G.players.some(p => p.name.toLowerCase() === name.toLowerCase())) { conn.send({ t: 'error', msg: 'That name is taken in this room.', fatal: true }); return; }
+        if (G.players.length >= 20) { conn.send({ t: 'error', msg: 'Room is full.', fatal: true }); return; }
+        G.players.push({ id: cid, name, role: null, alive: true });
+        conns.set(cid, conn);
+      }
+      broadcast();
+      return;
+    }
+    if (!cid || conns.get(cid) !== conn) return;
+    hostHandle(cid, msg);
+  });
+  const gone = () => {
+    if (cid && conns.get(cid) === conn) {
+      conns.delete(cid);
+      if (G.phase === 'lobby') G.players = G.players.filter(p => p.id !== cid);
+      broadcast();
+    }
+  };
+  conn.on('close', gone);
+  conn.on('error', gone);
+}
+
+function startHosting(name, code, existingGame, attempt = 0) {
+  mode = 'host';
+  roomCode = code;
+  setStatus('Creating room…');
+  if (peer) try { peer.destroy(); } catch {}
+  peer = new Peer(PREFIX + code, PEER_OPTS);
+  peer.on('open', () => {
+    setStatus('');
+    G = existingGame || newGame(code, name);
+    G.hostId = clientId;
+    store.set('mafia.name', name);
+    history.replaceState(null, '', '?room=' + code);
+    broadcast();
+  });
+  peer.on('connection', hostOnConnection);
+  peer.on('disconnected', () => { setStatus('Lost signalling server — reconnecting…'); setTimeout(() => { try { peer.reconnect(); } catch {} }, 1000); });
+  peer.on('error', e => {
+    if (e.type === 'unavailable-id') {
+      if (existingGame && attempt < 8) { setStatus('Restoring room…'); setTimeout(() => startHosting(name, code, existingGame, attempt + 1), 2500); }
+      else if (!existingGame) startHosting(name, randCode(), null, attempt + 1);
+      else { setStatus(''); ssDel('mafia.host'); goHome('Could not restore the room. Please create a new one.'); }
+      return;
+    }
+    if (e.type === 'network' || e.type === 'server-error' || e.type === 'socket-error') { setStatus('Connection problem — retrying…'); return; }
+    if (e.type === 'peer-unavailable') return;
+    console.warn(e);
+  });
+}
+
+/* =========================================================
+   CLIENT
+   ========================================================= */
+let reconnectTimer = null;
+let joinName = null;
+
+function joinRoom(name, code) {
+  mode = 'client';
+  roomCode = code;
+  joinName = name;
+  store.set('mafia.name', name);
+  ssSet('mafia.client', { name, code });
+  history.replaceState(null, '', '?room=' + code);
+  setStatus('Connecting to room ' + code + '…');
+  if (!peer || peer.destroyed) {
+    peer = new Peer(PEER_OPTS);
+    peer.on('open', () => connectToHost());
+    peer.on('disconnected', () => { try { peer.reconnect(); } catch {} });
+    peer.on('error', e => {
+      if (e.type === 'peer-unavailable') {
+        if (view) scheduleReconnect();
+        else { leave(); goHome(`Room ${code} not found. Check the code — the host must keep their app open.`); }
+        return;
+      }
+      if (e.type === 'network' || e.type === 'server-error' || e.type === 'socket-error') { setStatus('Connection problem — retrying…'); scheduleReconnect(); return; }
+      console.warn(e);
+    });
+  } else if (peer.open) connectToHost();
+}
+
+function connectToHost() {
+  if (hostConn) try { hostConn.close(); } catch {}
+  const conn = peer.connect(PREFIX + roomCode, { reliable: true });
+  hostConn = conn;
+  const timeout = setTimeout(() => { if (!conn.open) { try { conn.close(); } catch {} if (hostConn === conn) scheduleReconnect(); } }, 12000);
+  conn.on('open', () => { clearTimeout(timeout); setStatus(''); conn.send({ t: 'join', clientId, name: joinName }); });
+  conn.on('data', msg => {
+    if (!msg) return;
+    if (msg.t === 'state') { ui.error = ''; render(msg.view); }
+    else if (msg.t === 'error') {
+      if (msg.fatal) { leave(); goHome(msg.msg); }
+      else { ui.error = msg.msg; render(view); }
+    } else if (msg.t === 'kicked') { leave(); goHome('You were removed from the room by the host.'); }
+  });
+  conn.on('close', () => { clearTimeout(timeout); if (hostConn === conn && mode === 'client') scheduleReconnect(); });
+  conn.on('error', () => { clearTimeout(timeout); if (hostConn === conn && mode === 'client') scheduleReconnect(); });
+}
+
+function scheduleReconnect() {
+  if (mode !== 'client' || reconnectTimer) return;
+  setStatus('Disconnected from host — reconnecting…');
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null;
+    if (mode !== 'client') return;
+    if (!peer || peer.destroyed) { peer = null; joinRoom(joinName, roomCode); }
+    else if (peer.disconnected) { try { peer.reconnect(); } catch {} setTimeout(() => peer.open && connectToHost(), 1500); }
+    else connectToHost();
+  }, 2500);
+}
+
+function send(msg) {
+  if (mode === 'host') hostHandle(clientId, msg);
+  else if (hostConn && hostConn.open) hostConn.send(msg);
+  else ui.error = 'Not connected — reconnecting…';
+}
+
+function leave() {
+  mode = 'home';
+  clearTimeout(reconnectTimer); reconnectTimer = null;
+  try { hostConn && hostConn.close(); } catch {}
+  try { peer && peer.destroy(); } catch {}
+  peer = null; hostConn = null; G = null; view = null; conns.clear();
+  ssDel('mafia.host'); ssDel('mafia.client');
+  setStatus('');
+}
+
+/* =========================================================
+   RENDERING
+   ========================================================= */
+function goHome(error) {
+  mode = 'home'; view = null;
+  history.replaceState(null, '', location.pathname);
+  renderHome(error);
+}
+
+function renderHome(error = '') {
+  const params = new URLSearchParams(location.search);
+  const preCode = (params.get('room') || '').toUpperCase();
+  const name = store.get('mafia.name') || '';
+  $app.innerHTML = `
+    <div class="center">
+      <div style="font-size:64px;margin-top:10px">🕵️</div>
+      <h1>Mafia</h1>
+      <p class="muted">A party game for 3+ friends in the same room.</p>
+    </div>
+    <div class="card">
+      <div class="label">Your name</div>
+      <input id="name" maxlength="20" placeholder="e.g. Priya" value="${esc(name)}" autocomplete="off">
+      <div class="label">Join a room</div>
+      <div class="row">
+        <input id="code" class="code" maxlength="4" placeholder="CODE" value="${esc(preCode)}" autocomplete="off">
+      </div>
+      <button id="join">Join room</button>
+      <div class="center muted small" style="margin:14px 0 4px">— or —</div>
+      <button id="create" class="secondary">Create a new room</button>
+      <div class="err" id="err">${esc(error)}</div>
+    </div>
+    <div class="card small muted">
+      <b style="color:var(--text)">How to play</b>
+      <ol class="rules" style="padding-left:18px;margin:8px 0 0">
+        <li>One person creates a room and shares the 4-letter code.</li>
+        <li>Everyone joins; the host starts the game and roles are dealt at random: <b>1 Mafia</b>, <b>1 Doctor</b>, everyone else is a <b>Citizen</b>.</li>
+        <li><b>Night:</b> the Mafia picks someone to kill, then the Doctor picks someone to save. If the Doctor saves the target, nobody dies.</li>
+        <li><b>Day:</b> everyone left alive discusses and votes someone out. The app reveals whether they were the Mafia.</li>
+        <li>Citizens win by voting out the Mafia. The Mafia wins when only one other player is left.</li>
+      </ol>
+      <p style="margin-top:10px">The host's phone runs the game — keep that screen open.</p>
+    </div>`;
+  const $n = document.getElementById('name'), $c = document.getElementById('code'), $e = document.getElementById('err');
+  $c.addEventListener('input', () => { $c.value = $c.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); });
+  const getName = () => { const v = $n.value.trim(); if (!v) { $e.textContent = 'Enter your name first.'; $n.focus(); } return v; };
+  document.getElementById('join').onclick = () => {
+    const n = getName(); if (!n) return;
+    const c = $c.value.trim().toUpperCase();
+    if (c.length !== 4) { $e.textContent = 'Enter the 4-letter room code.'; $c.focus(); return; }
+    joinRoom(n, c); renderWaiting('Joining room ' + c + '…');
+  };
+  document.getElementById('create').onclick = () => {
+    const n = getName(); if (!n) return;
+    startHosting(n, randCode()); renderWaiting('Creating room…');
+  };
+  $c.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('join').click(); });
+}
+
+function renderWaiting(msg) {
+  $app.innerHTML = `<div class="card phase"><div class="big">⏳</div><p>${esc(msg)}</p>
+    <button class="secondary" id="cancel">Cancel</button></div>`;
+  document.getElementById('cancel').onclick = () => { leave(); goHome(); };
+}
+
+function render(v) {
+  if (!v) return;
+  const prevPhase = view && view.phase + ':' + view.round;
+  if (prevPhase !== v.phase + ':' + v.round) { ui.selected = null; }
+  view = v;
+  const me = v.players.find(p => p.id === v.me);
+  const isHost = v.me === v.hostId;
+  const byId = id => v.players.find(p => p.id === id);
+  let html = '';
+
+  const header = `<div class="row" style="align-items:center;margin-bottom:4px">
+      <div><div class="label" style="margin:0">Room</div><div style="font-weight:800;letter-spacing:4px;font-size:20px">${esc(v.code)}</div></div>
+      <div style="text-align:right"><div class="label" style="margin:0">${v.phase === 'lobby' ? 'Lobby' : v.phase === 'over' ? 'Game over' : 'Round ' + v.round}</div>
+      <div style="font-weight:600">${esc(me ? me.name : '')}${isHost ? ' · host' : ''}</div></div></div>`;
+
+  const roleCard = () => {
+    if (!me || !me.role) return '';
+    const r = ROLES[me.role];
+    if (!ui.revealed) return `<div class="rolecard" id="rolecard"><div class="emoji">🂠</div><div class="rname">Tap to see your role</div><p class="muted small">Keep your screen hidden from others</p></div>`;
+    return `<div class="rolecard ${me.role}" id="rolecard"><div class="emoji">${r.emoji}</div><div class="rname">You are the ${r.name}</div><p class="small">${r.desc}</p>${me.alive ? '' : '<p class="small" style="color:#ff8a8d"><b>You are dead</b> — you can watch, but stay quiet!</p>'}<p class="muted small">Tap to hide</p></div>`;
+  };
+
+  const playerList = (opts = {}) => `<ul class="players">${v.players.map(p => `
+      <li class="${p.alive || v.phase === 'lobby' ? '' : 'dead'}"><span class="dot ${p.connected ? '' : 'off'}"></span>
+      <span>${esc(p.name)}</span>
+      ${opts.showRoles && p.role ? `<span class="tag">${ROLES[p.role].emoji} ${ROLES[p.role].name}</span>` : ''}
+      ${p.id === v.me ? '<span class="tag me">you</span>' : p.id === v.hostId ? '<span class="tag">host</span>' : ''}
+      ${opts.kick && p.id !== v.me ? `<button class="secondary" data-kick="${esc(p.id)}" style="width:auto;margin:0 0 0 6px;padding:4px 10px;font-size:13px">✕</button>` : ''}
+      </li>`).join('')}</ul>`;
+
+  const targetGrid = (ids, actionLabel, kind, extra = '') => `
+    <div class="targets">${ids.map(id => { const p = byId(id); return `<button data-pick="${esc(id)}" class="${ui.selected === id ? 'sel' : ''}">${esc(p.name)}${id === v.me ? '<span class="n">(you)</span>' : ''}</button>`; }).join('')}${extra}</div>
+    <button id="confirm" class="${kind === 'kill' ? 'danger' : kind === 'save' ? 'good' : ''}" ${ui.selected ? '' : 'disabled'}>${actionLabel}</button>`;
+
+  const aliveIds = v.players.filter(p => p.alive).map(p => p.id);
+
+  switch (v.phase) {
+    case 'lobby': {
+      const shareUrl = location.origin + location.pathname + '?room=' + v.code;
+      html = `${header}
+        <div class="card center">
+          <div class="label">Room code</div>
+          <div class="roomcode">${esc(v.code)}</div>
+          <p class="muted small">Friends open this site and enter the code, or share the link:</p>
+          <button class="secondary" id="share">📤 Share invite link</button>
+        </div>
+        <div class="card">
+          <div class="label" style="margin-top:0">Players (${v.players.length})</div>
+          ${playerList({ kick: isHost })}
+          ${isHost
+            ? `<button id="start" class="good" ${v.players.length < MIN_PLAYERS ? 'disabled' : ''}>Start game &amp; deal roles</button>
+               <p class="muted small center">${v.players.length < MIN_PLAYERS ? `Need at least ${MIN_PLAYERS} players.` : '1 Mafia · 1 Doctor · ' + (v.players.length - 2) + ' Citizen' + (v.players.length - 2 === 1 ? '' : 's')}</p>`
+            : `<p class="muted center" style="margin-top:14px">Waiting for the host to start…</p>`}
+        </div>
+        <button class="secondary" id="leave">Leave room</button>`;
+      $app.innerHTML = html;
+      bindCommon();
+      const sh = document.getElementById('share');
+      sh.onclick = async () => {
+        try { if (navigator.share) { await navigator.share({ title: 'Join my Mafia game', text: `Join my Mafia game! Room code: ${v.code}`, url: shareUrl }); return; } } catch { return; }
+        try { await navigator.clipboard.writeText(shareUrl); sh.textContent = '✅ Link copied!'; } catch { prompt('Copy this link:', shareUrl); }
+      };
+      const st = document.getElementById('start'); if (st) st.onclick = () => send({ t: 'start' });
+      document.querySelectorAll('[data-kick]').forEach(b => b.onclick = () => send({ t: 'kick', target: b.dataset.kick }));
+      return;
+    }
+
+    case 'night_mafia':
+    case 'night_doctor': {
+      const mafiaTurn = v.phase === 'night_mafia';
+      let body;
+      if (me.alive && mafiaTurn && me.role === 'mafia') {
+        body = `<div class="card"><h2>🔪 Choose your victim</h2><p class="muted">Tap a player, then confirm.</p>
+          ${targetGrid(aliveIds.filter(id => id !== v.me), 'Kill', 'kill')}</div>`;
+      } else if (me.alive && !mafiaTurn && me.role === 'doctor') {
+        body = `<div class="card"><h2>💉 Who will you save?</h2><p class="muted">If you pick the Mafia's target, they survive the night.</p>
+          ${targetGrid(aliveIds, 'Save', 'save')}</div>`;
+      } else {
+        const who = mafiaTurn ? 'The Mafia is choosing a victim…' : 'The Doctor is choosing who to save…';
+        const extra = (me.role === 'mafia' && !mafiaTurn && v.myKill) ? `<p class="small" style="color:#ff8a8d">You chose <b>${esc(byId(v.myKill).name)}</b>.</p>` : '';
+        body = `<div class="card phase"><div class="big">🌙</div><h2>Night ${v.round}</h2><p class="muted">Everyone close your eyes.</p><p>${who}</p>${extra}</div>`;
+      }
+      html = `${header}${body}${roleCard()}`;
+      break;
+    }
+
+    case 'morning': {
+      const n = v.lastNight;
+      let banner;
+      if (!n || !n.victim) banner = `<div class="banner neutral">Nothing happened last night.</div>`;
+      else if (n.saved) banner = `<div class="banner good">💉 The Mafia attacked <b>${esc(n.victimName)}</b>, but the Doctor saved them!</div>`;
+      else banner = `<div class="banner bad">💀 <b>${esc(n.victimName)}</b> was killed by the Mafia.</div>`;
+      html = `${header}<div class="card phase"><div class="big">☀️</div><h2>Day ${v.round}</h2>${banner}
+        <p class="muted">Discuss who you think the Mafia is.</p>
+        ${isHost ? '<button id="startVote">Start voting</button>' : '<p class="muted small">The host will start the vote when you\'re ready.</p>'}</div>
+        <div class="card"><div class="label" style="margin-top:0">Players</div>${playerList()}</div>${roleCard()}`;
+      break;
+    }
+
+    case 'voting': {
+      let body;
+      if (!me.alive) {
+        body = `<div class="card phase"><div class="big">👻</div><h2>Voting</h2><p class="muted">You're dead, so you can't vote.</p></div>`;
+      } else if (v.myVote) {
+        const name = v.myVote === 'skip' ? 'Skip' : byId(v.myVote).name;
+        body = `<div class="card phase"><div class="big">🗳️</div><h2>Vote cast</h2><p>You voted for <b>${esc(name)}</b>.</p></div>`;
+      } else {
+        body = `<div class="card"><h2>🗳️ Vote someone out</h2><p class="muted">Who is the Mafia?</p>
+          ${targetGrid(aliveIds.filter(id => id !== v.me), 'Cast vote', 'vote',
+            `<button data-pick="skip" class="${ui.selected === 'skip' ? 'sel' : ''}" style="grid-column:1/-1">Skip vote</button>`)}</div>`;
+      }
+      html = `${header}${body}
+        <div class="card center"><p><b>${v.votedCount}</b> of <b>${v.aliveCount}</b> players have voted</p>
+        ${isHost ? '<button class="secondary" id="forceTally">End voting now</button>' : ''}</div>${roleCard()}`;
+      break;
+    }
+
+    case 'verdict': {
+      html = `${header}<div class="card phase">${verdictHtml(v)}
+        ${isHost ? '<button id="nextNight">Continue to Night ' + (v.round + 1) + '</button>' : '<p class="muted small">Waiting for the host to continue…</p>'}</div>
+        ${tallyHtml(v)}${roleCard()}`;
+      break;
+    }
+
+    case 'over': {
+      const mafiaWon = v.winner === 'mafia';
+      const mafia = v.players.find(p => p.role === 'mafia');
+      html = `${header}<div class="card phase">
+          <div class="big">${mafiaWon ? '🔪' : '🎉'}</div>
+          <h2>${mafiaWon ? 'The Mafia wins!' : 'The Citizens win!'}</h2>
+          ${lastEventHtml(v)}
+          <p>The Mafia was <b>${esc(mafia ? mafia.name : '?')}</b>.</p>
+          ${isHost ? '<button id="playAgain" class="good">Play again</button>' : '<p class="muted small">Waiting for the host to start a new game…</p>'}
+        </div>
+        <div class="card"><div class="label" style="margin-top:0">Roles</div>${playerList({ showRoles: true })}</div>
+        <button class="secondary" id="leave">Leave room</button>`;
+      break;
+    }
+  }
+
+  html += `<div class="err center">${esc(ui.error || '')}</div>`;
+  $app.innerHTML = html;
+  bindCommon();
+}
+
+function lastEventHtml(v) {
+  // Explain the final event that ended the game
+  if (v.verdict && v.verdict.eliminated) return verdictLine(v.verdict);
+  const n = v.lastNight;
+  if (n && n.victim && !n.saved) return `<div class="banner bad">💀 <b>${esc(n.victimName)}</b> was killed during the night.</div>`;
+  return '';
+}
+
+function verdictLine(vd) {
+  if (!vd.eliminated) return vd.tie ? `<div class="banner neutral">It's a tie — nobody was voted out.</div>` : `<div class="banner neutral">The town chose to skip — nobody was voted out.</div>`;
+  return vd.wasMafia
+    ? `<div class="banner good">🎯 <b>${esc(vd.name)}</b> was voted out… and they <b>WERE the Mafia!</b></div>`
+    : `<div class="banner bad">😬 <b>${esc(vd.name)}</b> was voted out… they were <b>NOT the Mafia.</b></div>`;
+}
+
+function verdictHtml(v) {
+  return `<div class="big">⚖️</div><h2>The town has spoken</h2>${verdictLine(v.verdict)}`;
+}
+
+function tallyHtml(v) {
+  if (!v.tally || !v.tally.length) return '';
+  return `<div class="card"><div class="label" style="margin-top:0">Votes</div><ul class="tally">${v.tally.map(t => `<li><span>${esc(t.name)}</span><b>${t.n}</b></li>`).join('')}</ul></div>`;
+}
+
+function bindCommon() {
+  const rc = document.getElementById('rolecard');
+  if (rc) rc.onclick = () => { ui.revealed = !ui.revealed; render(view); };
+  document.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => { ui.selected = b.dataset.pick; render(view); });
+  const cf = document.getElementById('confirm');
+  if (cf) cf.onclick = () => {
+    if (!ui.selected) return;
+    const kind = view.phase === 'night_mafia' ? 'kill' : view.phase === 'night_doctor' ? 'save' : 'vote';
+    send({ t: kind, target: ui.selected });
+  };
+  const map = { startVote: 'startVote', forceTally: 'forceTally', nextNight: 'nextNight', playAgain: 'playAgain' };
+  for (const id in map) { const el = document.getElementById(id); if (el) el.onclick = () => send({ t: map[id] }); }
+  const lv = document.getElementById('leave');
+  if (lv) lv.onclick = () => {
+    if (mode === 'host' && view && view.players.length > 1 && !confirm('You are the host — leaving ends the game for everyone. Leave?')) return;
+    leave(); goHome();
+  };
+}
+
+/* ---------------- boot ---------------- */
+window.addEventListener('beforeunload', e => { if (mode === 'host' && G && G.phase !== 'lobby') { e.preventDefault(); e.returnValue = ''; } });
+
+const savedHost = ssGet('mafia.host');
+const savedClient = ssGet('mafia.client');
+if (savedHost && savedHost.hostId === clientId) {
+  const hn = (savedHost.players.find(p => p.id === clientId) || {}).name || store.get('mafia.name') || 'Host';
+  startHosting(hn, savedHost.code, savedHost);
+  renderWaiting('Restoring your room…');
+} else if (savedClient && savedClient.code) {
+  joinRoom(savedClient.name, savedClient.code);
+  renderWaiting('Rejoining room ' + savedClient.code + '…');
+} else {
+  renderHome();
+}
+
+// expose for automated tests
+window.__mafia = { get view() { return view; }, get G() { return G; } };
+})();
+</script>
+</body>
+</html>
