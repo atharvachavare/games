@@ -114,7 +114,17 @@ const ssGet = k => { try { return JSON.parse(sessionStorage.getItem(k)); } catch
 const ssSet = (k, v) => { try { sessionStorage.setItem(k, JSON.stringify(v)); } catch {} };
 const ssDel = k => { try { sessionStorage.removeItem(k); } catch {} };
 const randCode = () => Array.from({ length: 4 }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join('');
-const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+// cryptographically strong random integer in [0, n)
+const randInt = n => {
+  if (window.crypto && crypto.getRandomValues) {
+    const max = Math.floor(0x100000000 / n) * n, buf = new Uint32Array(1);
+    do { crypto.getRandomValues(buf); } while (buf[0] >= max);
+    return buf[0] % n;
+  }
+  return Math.floor(Math.random() * n);
+};
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = randInt(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const pick = a => a[randInt(a.length)];
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36));
 
 let clientId = ssGet('mafia.clientId');
@@ -209,10 +219,18 @@ function hostHandle(fromId, msg) {
       // drop players who left the lobby
       G.players = G.players.filter(p => p.id === G.hostId || (conns.has(p.id) && conns.get(p.id).open));
       if (G.players.length < MIN_PLAYERS) return err(`Need at least ${MIN_PLAYERS} players.`);
-      const order = shuffle(G.players.map(p => p.id));
+      // Deal roles at random. Nobody gets the same special role two games in a row,
+      // so the same person can't be the Mafia (or Doctor) game after game.
+      const ids = shuffle(G.players.map(p => p.id));
+      const mafiaPool = ids.filter(id => id !== G.prevMafia);
+      const mafiaId = pick(mafiaPool.length ? mafiaPool : ids);
+      const rest = ids.filter(id => id !== mafiaId);
+      const docPool = rest.filter(id => id !== G.prevDoctor);
+      const doctorId = pick(docPool.length ? docPool : rest);
       G.players.forEach(p => { p.alive = true; p.role = 'citizen'; });
-      P(order[0]).role = 'mafia';
-      P(order[1]).role = 'doctor';
+      P(mafiaId).role = 'mafia';
+      P(doctorId).role = 'doctor';
+      G.prevMafia = mafiaId; G.prevDoctor = doctorId;
       G.round = 1; G.phase = 'night_mafia';
       G.mafiaTarget = G.doctorSave = null; G.lastNight = null; G.votes = {}; G.verdict = null; G.winner = null; G.tally = null;
       break;
@@ -710,7 +728,7 @@ if (savedHost && savedHost.hostId === clientId) {
 }
 
 // expose for automated tests
-window.__mafia = { get view() { return view; }, get G() { return G; } };
+window.__mafia = { get view() { return view; }, get G() { return G; }, send };
 })();
 </script>
 </body>
