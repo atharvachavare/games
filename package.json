@@ -3,5 +3,8 @@
   "private": true,
   "scripts": {
     "dev": "node dev-server.js"
+  },
+  "dependencies": {
+    "redis": "4.7.0"
   }
 }

@@ -40,7 +40,9 @@ async function readBody(req) {
 
 module.exports = async function handler(req, res) {
   if (process.env.VERCEL && store.kind === 'memory') {
-    return send(res, 503, { error: 'Game storage is not set up yet. In Vercel: Storage → create an Upstash Redis database → connect it to this project → redeploy.' });
+    const seen = store.relatedSettingNames;
+    return send(res, 503, { error: 'Game storage is not set up yet. In Vercel: Storage → create a Redis database → connect it to this project → Deployments → Redeploy. '
+      + (seen.length ? `(This deployment can see: ${seen.join(', ')})` : '(This deployment can\'t see any database settings — it may need a redeploy after connecting.)') });
   }
   try {
     if (req.method === 'GET') {
