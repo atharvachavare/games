@@ -103,13 +103,18 @@ const store = {
   del(k) { try { localStorage.removeItem(k); } catch {} },
 };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const uid = () => (crypto.randomUUID ? crypto.randomUUID()
-  : Array.from({ length: 4 }, () => Math.random().toString(36).slice(2, 10)).join('-'));
+// Works on older Android browsers and in-app browsers that lack crypto.randomUUID.
+const uid = () => {
+  try { if (crypto.randomUUID) return crypto.randomUUID(); } catch {}
+  try { return Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join(''); } catch {}
+  let s = ''; while (s.length < 32) s += Math.random().toString(36).slice(2);
+  return s.slice(0, 32);
+};
 
 // A private id for this phone. It is what lets you drop out and come straight back
 // into the same game, so it's kept even if the tab is closed.
 let secret = store.get('mafia.secret');
-if (!secret) { secret = uid(); store.set('mafia.secret', secret); }
+if (!/^[A-Za-z0-9-]{16,64}$/.test(secret || '')) { secret = uid(); store.set('mafia.secret', secret); }
 
 function setStatus(msg) { $status.textContent = msg || ''; $status.style.display = msg ? 'block' : 'none'; }
 
@@ -134,7 +139,12 @@ async function api(method, body, query) {
       headers: body ? { 'Content-Type': 'application/json' } : undefined,
       body: body ? JSON.stringify(body) : undefined,
     });
-    const data = await res.json().catch(() => ({ error: 'Server error (' + res.status + '). Please try again.' }));
+    const data = await res.json().catch(() => ({ error: res.status === 401 || res.status === 403
+      ? 'This link is private (it asks for a Vercel login). Ask the host for the public game link.'
+      : 'Server error (' + res.status + '). Please try again.' }));
+    if (data.error && typeof data.error === 'object') data.error = res.status === 401
+      ? 'This link is private (it asks for a Vercel login). Ask the host for the public game link.'
+      : (data.error.message || 'Server error.');
     data.status = res.status;
     return data;
   } finally { clearTimeout(timer); }
@@ -258,7 +268,7 @@ function renderHome(error = '') {
       <input id="name" maxlength="20" placeholder="e.g. Priya" value="${esc(name)}" autocomplete="off">
       <div class="label">Join a room</div>
       <div class="row">
-        <input id="code" class="code" maxlength="4" placeholder="CODE" value="${esc(preCode)}" autocomplete="off">
+        <input id="code" class="code" placeholder="CODE" value="${esc(preCode)}" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" enterkeyhint="go">
       </div>
       <button id="join">Join room</button>
       <div class="center muted small" style="margin:14px 0 4px">— or —</div>
@@ -277,11 +287,15 @@ function renderHome(error = '') {
       <p style="margin-top:10px">Works on Wi-Fi or mobile data. If your connection drops or you close the app, just open it again — you'll be right back in the game.</p>
     </div>`;
   const $n = document.getElementById('name'), $c = document.getElementById('code'), $e = document.getElementById('err');
-  $c.addEventListener('input', () => { $c.value = $c.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); });
+  // Don't rewrite the box while an Android keyboard is mid-word — it garbles the code.
+  // The code is cleaned up when you tap Join instead.
+  const tidy = () => { const t = $c.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4); if (t !== $c.value) $c.value = t; };
+  $c.addEventListener('compositionend', tidy);
+  $c.addEventListener('blur', tidy);
   const getName = () => { const v = $n.value.trim(); if (!v) { $e.textContent = 'Enter your name first.'; $n.focus(); } return v; };
   document.getElementById('join').onclick = () => {
     const n = getName(); if (!n) return;
-    const c = $c.value.trim().toUpperCase();
+    const c = $c.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (c.length !== 4) { $e.textContent = 'Enter the 4-letter room code.'; $c.focus(); return; }
     joinRoom(n, c);
   };
@@ -289,7 +303,7 @@ function renderHome(error = '') {
     const n = getName(); if (!n) return;
     createRoom(n);
   };
-  $c.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('join').click(); });
+  $c.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) { tidy(); document.getElementById('join').click(); } });
 }
 
 function renderWaiting(msg) {
