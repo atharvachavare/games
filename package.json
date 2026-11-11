@@ -1,0 +1,7 @@
+{
+  "name": "mafia-party-game",
+  "private": true,
+  "scripts": {
+    "dev": "node dev-server.js"
+  }
+}
