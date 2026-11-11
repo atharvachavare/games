@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Mafia logo">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a1216"/>
+      <stop offset="1" stop-color="#0d0d12"/>
+    </linearGradient>
+    <radialGradient id="glow" cx=".5" cy=".7" r=".5">
+      <stop offset="0" stop-color="#e5484d" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#e5484d" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="url(#bg)"/>
+  <rect width="128" height="128" rx="28" fill="url(#glow)"/>
+  <!-- fedora crown -->
+  <path d="M36 66 C36 48 38 36 47 31 C55 27 58 34 64 34 C70 34 73 27 81 31 C90 36 92 48 92 66 Z" fill="#ececf3"/>
+  <!-- hat band -->
+  <path d="M36.6 54 H91.4 L92 64 H36 Z" fill="#e5484d"/>
+  <!-- brim -->
+  <ellipse cx="64" cy="67" rx="50" ry="10" fill="#ececf3"/>
+  <!-- eyes in the shadow -->
+  <path d="M42 85 Q51 79 60 85 Q51 88.5 42 85 Z" fill="#e5484d"/>
+  <path d="M68 85 Q77 79 86 85 Q77 88.5 68 85 Z" fill="#e5484d"/>
+</svg>
