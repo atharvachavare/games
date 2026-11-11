@@ -51,6 +51,9 @@
   .targets button { margin: 0; background: var(--panel2); border: 2px solid var(--line); color: var(--text); padding: 16px 8px; }
   .targets button.sel { border-color: var(--gold); background: #2d2615; }
   .targets button .n { display: block; font-size: 12px; color: var(--muted); font-weight: 500; margin-top: 2px; }
+  .stepper { display: flex; align-items: center; gap: 12px; }
+  .stepper button { margin: 0; width: 56px; flex: none; font-size: 24px; padding: 8px 0; }
+  .stepper .count { flex: 1; text-align: center; font-size: 32px; font-weight: 800; }
   .rolecard { border-radius: 18px; padding: 22px; text-align: center; cursor: pointer; user-select: none;
     border: 1px solid var(--line); background: var(--panel); }
   .rolecard .emoji { font-size: 56px; line-height: 1.1; }
@@ -150,10 +153,14 @@ function newGame(code, hostName) {
   return {
     code, phase: 'lobby', round: 0, hostId: clientId,
     players: [{ id: clientId, name: hostName, role: null, alive: true }],
-    mafiaTarget: null, doctorSave: null, lastNight: null,
-    votes: {}, verdict: null, winner: null,
+    mafiaTarget: null, mafiaVotes: {}, doctorSave: null, lastNight: null,
+    votes: {}, verdict: null, winner: null, mafiaCount: 1,
   };
 }
+
+// Mafia must start outnumbered, and there must be room for a Doctor.
+const maxMafia = n => Math.max(1, Math.floor((n - 1) / 2));
+const clampMafia = (m, n) => Math.min(Math.max(1, m | 0), maxMafia(n));
 
 const P = id => G.players.find(p => p.id === id);
 const alive = () => G.players.filter(p => p.alive);
@@ -166,16 +173,18 @@ function viewFor(id) {
   const players = G.players.map(p => ({
     id: p.id, name: p.name, alive: p.alive,
     connected: p.id === G.hostId ? true : conns.has(p.id) && conns.get(p.id).open,
-    role: (over || p.id === id) ? p.role : null,
+    // Mafia members know each other; everyone else only sees their own role.
+    role: (over || p.id === id || (me && me.role === 'mafia' && p.role === 'mafia')) ? p.role : null,
   }));
   const v = {
     code: G.code, phase: G.phase, round: G.round, hostId: G.hostId, me: id,
     players, lastNight: G.lastNight, verdict: G.verdict, winner: G.winner,
     votedCount: Object.keys(G.votes).length, aliveCount: alive().length,
     myVote: G.votes[id] || null,
+    mafiaCount: clampMafia(G.mafiaCount || 1, G.players.length), maxMafia: maxMafia(G.players.length),
   };
   // private night information
-  if (me && me.role === 'mafia') v.myKill = G.mafiaTarget;
+  if (me && me.role === 'mafia') { v.myKill = G.mafiaTarget; v.mafiaVotes = G.mafiaVotes || {}; }
   if (me && me.role === 'doctor') v.mySave = G.doctorSave;
   if (G.phase === 'verdict' || over) v.tally = G.tally || null;
   return v;
@@ -219,18 +228,15 @@ function hostHandle(fromId, msg) {
       // drop players who left the lobby
       G.players = G.players.filter(p => p.id === G.hostId || (conns.has(p.id) && conns.get(p.id).open));
       if (G.players.length < MIN_PLAYERS) return err(`Need at least ${MIN_PLAYERS} players.`);
-      // Deal roles at random. Nobody gets the same special role two games in a row,
-      // so the same person can't be the Mafia (or Doctor) game after game.
+      // Deal roles like drawing chits from a bowl: shuffle everyone fairly, the first
+      // N are Mafia and the next one is the Doctor. Each game is independent.
       const ids = shuffle(G.players.map(p => p.id));
-      const mafiaPool = ids.filter(id => id !== G.prevMafia);
-      const mafiaId = pick(mafiaPool.length ? mafiaPool : ids);
-      const rest = ids.filter(id => id !== mafiaId);
-      const docPool = rest.filter(id => id !== G.prevDoctor);
-      const doctorId = pick(docPool.length ? docPool : rest);
+      const m = clampMafia(G.mafiaCount || 1, ids.length);
+      G.mafiaCount = m;
       G.players.forEach(p => { p.alive = true; p.role = 'citizen'; });
-      P(mafiaId).role = 'mafia';
-      P(doctorId).role = 'doctor';
-      G.prevMafia = mafiaId; G.prevDoctor = doctorId;
+      ids.slice(0, m).forEach(id => { P(id).role = 'mafia'; });
+      P(ids[m]).role = 'doctor';
+      G.mafiaVotes = {};
       G.round = 1; G.phase = 'night_mafia';
       G.mafiaTarget = G.doctorSave = null; G.lastNight = null; G.votes = {}; G.verdict = null; G.winner = null; G.tally = null;
       break;
@@ -238,8 +244,15 @@ function hostHandle(fromId, msg) {
     case 'kill': {
       if (G.phase !== 'night_mafia' || !me || !me.alive || me.role !== 'mafia') return;
       const t = P(msg.target);
-      if (!t || !t.alive || t.id === me.id) return err('Pick a valid target.');
-      G.mafiaTarget = t.id;
+      if (!t || !t.alive || t.role === 'mafia') return err('Pick a valid target.');
+      G.mafiaVotes[me.id] = t.id;
+      const mafiaAlive = alive().filter(p => p.role === 'mafia');
+      if (!mafiaAlive.every(p => G.mafiaVotes[p.id])) break; // wait for the rest of the Mafia
+      // Most-picked target wins; a tie between targets is settled at random.
+      const counts = {};
+      mafiaAlive.forEach(p => { const x = G.mafiaVotes[p.id]; counts[x] = (counts[x] || 0) + 1; });
+      const best = Math.max(...Object.values(counts));
+      G.mafiaTarget = pick(Object.keys(counts).filter(x => counts[x] === best));
       const doc = G.players.find(p => p.role === 'doctor' && p.alive);
       if (doc) G.phase = 'night_doctor'; else resolveNight();
       break;
@@ -271,7 +284,7 @@ function hostHandle(fromId, msg) {
     }
     case 'nextNight': {
       if (!isHost || G.phase !== 'verdict') return;
-      G.round++; G.phase = 'night_mafia'; G.mafiaTarget = G.doctorSave = null; G.votes = {}; G.verdict = null; G.tally = null;
+      G.round++; G.phase = 'night_mafia'; G.mafiaTarget = G.doctorSave = null; G.mafiaVotes = {}; G.votes = {}; G.verdict = null; G.tally = null;
       break;
     }
     case 'playAgain': {
@@ -279,7 +292,12 @@ function hostHandle(fromId, msg) {
       G.phase = 'lobby'; G.round = 0;
       G.players = G.players.filter(p => p.id === G.hostId || (conns.has(p.id) && conns.get(p.id).open));
       G.players.forEach(p => { p.role = null; p.alive = true; });
-      G.mafiaTarget = G.doctorSave = null; G.lastNight = null; G.votes = {}; G.verdict = null; G.winner = null; G.tally = null;
+      G.mafiaTarget = G.doctorSave = null; G.mafiaVotes = {}; G.lastNight = null; G.votes = {}; G.verdict = null; G.winner = null; G.tally = null;
+      break;
+    }
+    case 'setMafia': {
+      if (!isHost || G.phase !== 'lobby') return;
+      G.mafiaCount = clampMafia(msg.n, G.players.length);
       break;
     }
     case 'kick': {
@@ -309,7 +327,8 @@ function tallyVotes() {
   } else {
     const p = P(top.id);
     p.alive = false;
-    G.verdict = { eliminated: p.id, name: p.name, wasMafia: p.role === 'mafia' };
+    G.verdict = { eliminated: p.id, name: p.name, wasMafia: p.role === 'mafia',
+      mafiaLeft: alive().filter(x => x.role === 'mafia').length, mafiaTotal: G.mafiaCount || 1 };
   }
   G.phase = 'verdict';
   const w = checkWinner();
@@ -494,10 +513,10 @@ function renderHome(error = '') {
       <b style="color:var(--text)">How to play</b>
       <ol class="rules" style="padding-left:18px;margin:8px 0 0">
         <li>One person creates a room and shares the 4-letter code.</li>
-        <li>Everyone joins; the host starts the game and roles are dealt at random: <b>1 Mafia</b>, <b>1 Doctor</b>, everyone else is a <b>Citizen</b>.</li>
-        <li><b>Night:</b> the Mafia picks someone to kill, then the Doctor picks someone to save. If the Doctor saves the target, nobody dies.</li>
+        <li>Everyone joins; the host starts the game and roles are dealt at random, like drawing chits: the host picks how many <b>Mafia</b>, there's <b>1 Doctor</b>, and everyone else is a <b>Citizen</b>. Mafia members know each other.</li>
+        <li><b>Night:</b> the Mafia pick someone to kill, then the Doctor picks someone to save. If the Doctor saves the target, nobody dies.</li>
         <li><b>Day:</b> everyone left alive discusses and votes someone out. The app reveals whether they were the Mafia.</li>
-        <li>Citizens win by voting out the Mafia. The Mafia wins when only one other player is left.</li>
+        <li>Citizens win by voting out every Mafia. The Mafia win when they equal or outnumber everyone else.</li>
       </ol>
       <p style="margin-top:10px">The host's phone runs the game — keep that screen open.</p>
     </div>`;
@@ -538,11 +557,14 @@ function render(v) {
       <div style="text-align:right"><div class="label" style="margin:0">${v.phase === 'lobby' ? 'Lobby' : v.phase === 'over' ? 'Game over' : 'Round ' + v.round}</div>
       <div style="font-weight:600">${esc(me ? me.name : '')}${isHost ? ' · host' : ''}</div></div></div>`;
 
+  const partners = me && me.role === 'mafia' ? v.players.filter(p => p.role === 'mafia' && p.id !== v.me) : [];
+  const nameList = arr => arr.length < 2 ? arr.join('') : arr.slice(0, -1).join(', ') + ' and ' + arr[arr.length - 1];
   const roleCard = () => {
     if (!me || !me.role) return '';
     const r = ROLES[me.role];
+    const team = partners.length ? `<p class="small">Your fellow Mafia: <b>${esc(nameList(partners.map(p => p.name + (p.alive ? '' : ' (dead)'))))}</b></p>` : '';
     if (!ui.revealed) return `<div class="rolecard" id="rolecard"><div class="emoji">🂠</div><div class="rname">Tap to see your role</div><p class="muted small">Keep your screen hidden from others</p></div>`;
-    return `<div class="rolecard ${me.role}" id="rolecard"><div class="emoji">${r.emoji}</div><div class="rname">You are the ${r.name}</div><p class="small">${r.desc}</p>${me.alive ? '' : '<p class="small" style="color:#ff8a8d"><b>You are dead</b> — you can watch, but stay quiet!</p>'}<p class="muted small">Tap to hide</p></div>`;
+    return `<div class="rolecard ${me.role}" id="rolecard"><div class="emoji">${r.emoji}</div><div class="rname">You are ${me.role === 'mafia' && partners.length ? 'a' : 'the'} ${r.name}</div><p class="small">${r.desc}</p>${team}${me.alive ? '' : '<p class="small" style="color:#ff8a8d"><b>You are dead</b> — you can watch, but stay quiet!</p>'}<p class="muted small">Tap to hide</p></div>`;
   };
 
   const playerList = (opts = {}) => `<ul class="players">${v.players.map(p => `
@@ -572,9 +594,17 @@ function render(v) {
         <div class="card">
           <div class="label" style="margin-top:0">Players (${v.players.length})</div>
           ${playerList({ kick: isHost })}
+          ${isHost ? `
+            <div class="label">Number of Mafia</div>
+            <div class="stepper">
+              <button class="secondary" id="mafiaMinus" ${v.mafiaCount <= 1 ? 'disabled' : ''} aria-label="Fewer Mafia">−</button>
+              <div class="count" id="mafiaCount">${v.mafiaCount}</div>
+              <button class="secondary" id="mafiaPlus" ${v.mafiaCount >= v.maxMafia ? 'disabled' : ''} aria-label="More Mafia">+</button>
+            </div>
+            <p class="muted small center">${v.mafiaCount >= v.maxMafia && v.players.length >= MIN_PLAYERS ? `Max ${v.maxMafia} Mafia for ${v.players.length} players — add more players for more Mafia.` : ''}</p>` : ''}
+          <p class="center" style="margin:12px 0 0">${v.players.length < MIN_PLAYERS ? `<span class="muted small">Need at least ${MIN_PLAYERS} players.</span>` : `${v.mafiaCount} Mafia · 1 Doctor · ${v.players.length - v.mafiaCount - 1} Citizen${v.players.length - v.mafiaCount - 1 === 1 ? '' : 's'}`}</p>
           ${isHost
-            ? `<button id="start" class="good" ${v.players.length < MIN_PLAYERS ? 'disabled' : ''}>Start game &amp; deal roles</button>
-               <p class="muted small center">${v.players.length < MIN_PLAYERS ? `Need at least ${MIN_PLAYERS} players.` : '1 Mafia · 1 Doctor · ' + (v.players.length - 2) + ' Citizen' + (v.players.length - 2 === 1 ? '' : 's')}</p>`
+            ? `<button id="start" class="good" ${v.players.length < MIN_PLAYERS ? 'disabled' : ''}>Start game &amp; deal roles</button>`
             : `<p class="muted center" style="margin-top:14px">Waiting for the host to start…</p>`}
         </div>
         <button class="secondary" id="leave">Leave room</button>`;
@@ -586,6 +616,8 @@ function render(v) {
         try { await navigator.clipboard.writeText(shareUrl); sh.textContent = '✅ Link copied!'; } catch { prompt('Copy this link:', shareUrl); }
       };
       const st = document.getElementById('start'); if (st) st.onclick = () => send({ t: 'start' });
+      const mm = document.getElementById('mafiaMinus'); if (mm) mm.onclick = () => send({ t: 'setMafia', n: v.mafiaCount - 1 });
+      const mp = document.getElementById('mafiaPlus'); if (mp) mp.onclick = () => send({ t: 'setMafia', n: v.mafiaCount + 1 });
       document.querySelectorAll('[data-kick]').forEach(b => b.onclick = () => send({ t: 'kick', target: b.dataset.kick }));
       return;
     }
@@ -595,14 +627,21 @@ function render(v) {
       const mafiaTurn = v.phase === 'night_mafia';
       let body;
       if (me.alive && mafiaTurn && me.role === 'mafia') {
-        body = `<div class="card"><h2>🔪 Choose your victim</h2><p class="muted">Tap a player, then confirm.</p>
-          ${targetGrid(aliveIds.filter(id => id !== v.me), 'Kill', 'kill')}</div>`;
+        const mv = v.mafiaVotes || {};
+        const myPick = mv[v.me];
+        if (!ui.selected && myPick) ui.selected = myPick;
+        const livePartners = partners.filter(p => p.alive);
+        const teamStatus = livePartners.length ? `<div class="label">Your team's picks</div><ul class="tally">${livePartners.map(p =>
+          `<li><span>${esc(p.name)}</span><b>${mv[p.id] ? esc(byId(mv[p.id]).name) : '<span class="muted">choosing…</span>'}</b></li>`).join('')}</ul>
+          <p class="muted small">The kill happens once every Mafia has picked. If you pick different people, the one with the most picks is chosen (ties are decided at random).</p>` : '';
+        body = `<div class="card"><h2>🔪 Choose your victim</h2><p class="muted">${myPick ? `You picked <b>${esc(byId(myPick).name)}</b> — waiting for your team. You can still change it.` : 'Tap a player, then confirm.'}</p>
+          ${targetGrid(aliveIds.filter(id => byId(id).role !== 'mafia'), myPick ? 'Change pick' : 'Kill', 'kill')}${teamStatus}</div>`;
       } else if (me.alive && !mafiaTurn && me.role === 'doctor') {
         body = `<div class="card"><h2>💉 Who will you save?</h2><p class="muted">If you pick the Mafia's target, they survive the night.</p>
           ${targetGrid(aliveIds, 'Save', 'save')}</div>`;
       } else {
         const who = mafiaTurn ? 'The Mafia is choosing a victim…' : 'The Doctor is choosing who to save…';
-        const extra = (me.role === 'mafia' && !mafiaTurn && v.myKill) ? `<p class="small" style="color:#ff8a8d">You chose <b>${esc(byId(v.myKill).name)}</b>.</p>` : '';
+        const extra = (me.role === 'mafia' && !mafiaTurn && v.myKill) ? `<p class="small" style="color:#ff8a8d">The Mafia chose <b>${esc(byId(v.myKill).name)}</b>.</p>` : '';
         body = `<div class="card phase"><div class="big">🌙</div><h2>Night ${v.round}</h2><p class="muted">Everyone close your eyes.</p><p>${who}</p>${extra}</div>`;
       }
       html = `${header}${body}${roleCard()}`;
@@ -649,12 +688,12 @@ function render(v) {
 
     case 'over': {
       const mafiaWon = v.winner === 'mafia';
-      const mafia = v.players.find(p => p.role === 'mafia');
+      const mafia = v.players.filter(p => p.role === 'mafia').map(p => p.name);
       html = `${header}<div class="card phase">
           <div class="big">${mafiaWon ? '🔪' : '🎉'}</div>
           <h2>${mafiaWon ? 'The Mafia wins!' : 'The Citizens win!'}</h2>
           ${lastEventHtml(v)}
-          <p>The Mafia was <b>${esc(mafia ? mafia.name : '?')}</b>.</p>
+          <p>The Mafia ${mafia.length > 1 ? 'were' : 'was'} <b>${esc(nameList(mafia))}</b>.</p>
           ${isHost ? '<button id="playAgain" class="good">Play again</button>' : '<p class="muted small">Waiting for the host to start a new game…</p>'}
         </div>
         <div class="card"><div class="label" style="margin-top:0">Roles</div>${playerList({ showRoles: true })}</div>
@@ -679,8 +718,8 @@ function lastEventHtml(v) {
 function verdictLine(vd) {
   if (!vd.eliminated) return vd.tie ? `<div class="banner neutral">It's a tie — nobody was voted out.</div>` : `<div class="banner neutral">The town chose to skip — nobody was voted out.</div>`;
   return vd.wasMafia
-    ? `<div class="banner good">🎯 <b>${esc(vd.name)}</b> was voted out… and they <b>WERE the Mafia!</b></div>`
-    : `<div class="banner bad">😬 <b>${esc(vd.name)}</b> was voted out… they were <b>NOT the Mafia.</b></div>`;
+    ? `<div class="banner good">🎯 <b>${esc(vd.name)}</b> was voted out… and they <b>WERE ${vd.mafiaTotal > 1 ? 'a' : 'the'} Mafia!</b>${vd.mafiaLeft > 0 ? `<div class="small" style="font-weight:500;margin-top:6px">${vd.mafiaLeft} Mafia still at large.</div>` : ''}</div>`
+    : `<div class="banner bad">😬 <b>${esc(vd.name)}</b> was voted out… they were <b>NOT ${vd.mafiaTotal > 1 ? 'a' : 'the'} Mafia.</b></div>`;
 }
 
 function verdictHtml(v) {

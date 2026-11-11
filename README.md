@@ -3,10 +3,10 @@
 A browser-based Mafia game for 3+ friends playing in the same room, each on their own phone.
 
 - One person creates a room and shares the 4-letter code (or invite link).
-- The host starts the game; roles are dealt randomly: **1 Mafia, 1 Doctor, everyone else Citizens**.
-- **Night:** the Mafia taps a player to kill, then the Doctor taps a player to save. If the Doctor saves the Mafia's target, nobody dies.
+- The host picks how many Mafia to have (up to just under half the players), then starts the game. Roles are dealt like drawing chits — a fair random shuffle every game, with no memory of previous games: **N Mafia, 1 Doctor, everyone else Citizens**. Mafia members can see who their partners are.
+- **Night:** each Mafia taps a player to kill (the most-picked target is chosen, ties broken at random), then the Doctor taps a player to save. If the Doctor saves the Mafia's target, nobody dies.
 - **Day:** everyone alive votes someone out (or skips). The app reveals whether that person was the Mafia.
-- Citizens win when the Mafia is voted out; the Mafia wins when only one other player remains.
+- Citizens win when every Mafia is voted out; the Mafia win when they equal or outnumber everyone else.
 
 ## How it works
 
