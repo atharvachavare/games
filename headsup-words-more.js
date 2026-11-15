@@ -116,9 +116,9 @@ Object.assign(window.GUESS_WORDS, {
   cartoons: [
     'Mickey Mouse', 'Minnie Mouse', 'Donald Duck', 'Goofy', 'Tom and Jerry', 'Bugs Bunny', 'Daffy Duck', 'Tweety',
     'Road Runner', 'Scooby-Doo', 'Popeye', 'Pink Panther', 'SpongeBob SquarePants', 'Patrick Star', 'Squidward',
-    'Dora the Explorer', 'Peppa Pig', 'Doraemon', 'Nobita', 'Shizuka', 'Gian', 'Suneo', 'Shinchan', 'Pikachu',
-    'Ash Ketchum', 'Charizard', 'Naruto', 'Sasuke', 'Goku', 'Vegeta', 'Luffy', 'Light Yagami', 'Eren Yeager',
-    'Tanjiro', 'Nezuko', 'Gojo Satoru', 'Sailor Moon', 'Totoro', 'Ben 10', 'Johnny Bravo', "Dexter's Laboratory",
+    'Dora the Explorer', 'Peppa Pig',       
+            
+         'Ben 10', 'Johnny Bravo', "Dexter's Laboratory",
     'Powerpuff Girls', 'Courage the Cowardly Dog', 'Oggy and the Cockroaches', 'Chhota Bheem', 'Motu Patlu',
     'Little Krishna', 'Chacha Chaudhary', 'Suppandi', 'Shikari Shambu', 'Bart Simpson', 'Homer Simpson',
     'Peter Griffin', 'Rick and Morty', 'Garfield', 'Snoopy', 'Charlie Brown', 'Winnie the Pooh', 'Tigger', 'Simba',
@@ -130,7 +130,35 @@ Object.assign(window.GUESS_WORDS, {
     'Noddy', 'Thomas the Tank Engine', 'Bob the Builder', 'Teletubbies', 'Pingu', 'Shaun the Sheep',
     'Mr. Potato Head', 'Bumblebee', 'Megatron', 'Sonic the Hedgehog', 'Mario', 'Luigi', 'Princess Peach',
     'Bowser', 'Donkey Kong', 'Pac-Man', 'Link (Zelda)', 'Kratos', 'Angry Birds',
-    'Mighty Raju', 'Tom (Talking Tom)', 'Hattori', 'Perman', 'Kiteretsu',
+    'Mighty Raju', 'Tom (Talking Tom)',   
+  ],
+
+  anime: [
+    // Shows & films
+    'One Piece', 'Naruto Shippuden', 'Dragon Ball Z', 'Dragon Ball Super', 'Death Note', 'Attack on Titan',
+    'Demon Slayer', 'Jujutsu Kaisen', 'My Hero Academia', 'Hunter x Hunter', 'Fullmetal Alchemist',
+    'One Punch Man', 'Tokyo Ghoul', 'Bleach', 'Pokémon', 'Your Name', "Howl's Moving Castle", 'Princess Mononoke',
+    "Kiki's Delivery Service", 'Ponyo', 'Grave of the Fireflies', 'A Silent Voice', 'Weathering with You', 'Suzume',
+    'Akira', 'Ghost in the Shell', 'Cowboy Bebop', 'Neon Genesis Evangelion', 'Code Geass', 'Steins;Gate',
+    'Sword Art Online', 'Black Clover', 'Haikyu!!', "Kuroko's Basketball", 'Blue Lock', 'Chainsaw Man',
+    'Spy x Family', 'Mob Psycho 100', 'Vinland Saga', 'Dr. Stone', 'Fairy Tail', 'Fire Force',
+    'The Promised Neverland', 'Tokyo Revengers', 'Solo Leveling', 'Oshi no Ko', 'Dandadan', 'Kaiju No. 8',
+    'Beyblade', 'Yu-Gi-Oh!', 'Digimon', 'Detective Conan', 'Captain Tsubasa', 'Ninja Hattori-kun', 'Kiteretsu',
+    'Perman', 'Hamtaro', 'Astro Boy', 'Speed Racer', 'Violet Evergarden', 'Your Lie in April', 'Erased',
+    'Parasyte', "Hell's Paradise", 'Bungo Stray Dogs', 'Black Butler', 'Re:Zero', 'Konosuba',
+    'That Time I Got Reincarnated as a Slime', 'Assassination Classroom', 'Food Wars!', 'Slam Dunk', 'Initial D',
+    'Gintama', 'Berserk', "JoJo's Bizarre Adventure", 'Trigun', 'Boruto', 'Doraemon', 'Shinchan', 'Sailor Moon',
+    // Characters
+    'Nobita', 'Shizuka', 'Gian', 'Suneo', 'Dekisugi', 'Pikachu', 'Ash Ketchum', 'Charizard', 'Team Rocket',
+    'Naruto', 'Sasuke', 'Sakura Haruno', 'Kakashi', 'Itachi', 'Hinata', 'Gaara', 'Jiraiya', 'Goku', 'Vegeta',
+    'Gohan', 'Piccolo', 'Frieza', 'Luffy', 'Zoro', 'Nami', 'Sanji', 'Light Yagami', 'L (Death Note)', 'Ryuk',
+    'Eren Yeager', 'Mikasa', 'Levi Ackerman', 'Armin', 'Tanjiro', 'Nezuko', 'Zenitsu', 'Inosuke', 'Rengoku',
+    'Muzan', 'Gojo Satoru', 'Yuji Itadori', 'Sukuna', 'Megumi Fushiguro', 'Deku', 'All Might', 'Bakugo',
+    'Todoroki', 'Edward Elric', 'Alphonse Elric', 'Saitama', 'Genos', 'Gon', 'Killua', 'Ichigo', 'Kaneki',
+    'Spike Spiegel', 'Totoro', 'No-Face', 'Chihiro', 'Anya Forger', 'Loid Forger', 'Yor Forger', 'Denji', 'Power',
+    'Makima', 'Asta', 'Senku', 'Conan Edogawa', 'Inuyasha', 'Hattori', 'Rem (Re:Zero)', 'Sung Jinwoo', 'Frieren',
+    'Kirito', 'Lelouch', 'Okabe Rintaro', 'Hinata Shoyo', 'Kageyama', 'Isagi Yoichi', 'Jotaro Kujo', 'Guts',
+    'Vash the Stampede', 'Rimuru', 'Kaguya Shinomiya', 'Bulma', 'Krillin', 'Ace (One Piece)', 'Shanks',
   ],
 
   tvShows: [

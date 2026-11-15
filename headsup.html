@@ -125,7 +125,8 @@ const SECTIONS = [
   ] },
   { name: 'Just for fun', cats: [
     { id: 'heroes',         emoji: '🦸', name: 'Heroes & Villains', hue: 0,   tag: 'With great power…', lists: ['superheroes'] },
-    { id: 'cartoons',       emoji: '🐭', name: 'Cartoons & Anime',  hue: 50,  tag: 'Childhood unlocked', lists: ['cartoons'] },
+    { id: 'cartoons',       emoji: '🐭', name: 'Cartoons',          hue: 50,  tag: 'Childhood unlocked', lists: ['cartoons'] },
+    { id: 'anime',          emoji: '🍥', name: 'Anime',             hue: 345, tag: 'Dattebayo!', lists: ['anime'] },
     { id: 'animals',        emoji: '🐘', name: 'Animals',           hue: 95,  tag: 'Make the noise!', lists: ['animals'] },
     { id: 'food',           emoji: '🍛', name: 'Food & Drinks',     hue: 25,  tag: 'Bhook lagi hai?', lists: ['food'] },
     { id: 'places',         emoji: '🗺️', name: 'Famous Places',     hue: 200, tag: 'Duniya ghoom lo', lists: ['places'] },
@@ -160,6 +161,18 @@ const store = {
 // A name is identified by its list + text, so "All Movies" and "Hindi Movies" share history.
 const keyOf = (list, name) => list + '|' + name;
 let used = new Set(store.get('guessit.used', []));
+// If a name moved to a different list (e.g. anime split out of cartoons), keep it marked as used.
+(() => {
+  const home = {}; for (const l of Object.keys(W)) for (const n of W[l]) (home[n] = home[n] || []).push(l);
+  let moved = false;
+  for (const k of [...used]) {
+    const i = k.indexOf('|'), l = k.slice(0, i), n = k.slice(i + 1);
+    if (W[l] && W[l].includes(n)) continue;
+    used.delete(k); moved = true;
+    (home[n] || []).forEach(nl => used.add(nl + '|' + n));
+  }
+  if (moved) store.set('guessit.used', [...used]);
+})();
 let best = store.get('guessit.best', {});
 const saveUsed = () => store.set('guessit.used', [...used]);
 const poolOf = cat => cat.lists.flatMap(l => W[l].map(n => ({ key: keyOf(l, n), name: n })));
