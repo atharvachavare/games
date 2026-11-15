@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d0d12">
+<title>Guess It! — Party Game</title>
+<link rel="icon" type="image/svg+xml" href="guessit-logo.svg">
+<link rel="apple-touch-icon" href="guessit-icon.png">
+<style>
+  :root {
+    --bg: #0d0d12; --panel: #17171f; --panel2: #20202b; --line: #2c2c3a;
+    --text: #ececf3; --muted: #9a9ab0; --red: #e5484d; --green: #30a46c; --blue: #3e8ef7; --gold: #f5b544;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  body { min-height: 100vh; min-height: 100dvh; }
+  main { max-width: 560px; margin: 0 auto; padding: 18px 16px 40px; }
+  h1 { font-size: 34px; margin: 6px 0 2px; }
+  h2 { font-size: 20px; margin: 0 0 6px; }
+  .muted { color: var(--muted); }
+  .small { font-size: 13px; }
+  .center { text-align: center; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin: 14px 0; }
+  .label { font-size: 12px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); margin: 0 0 8px; }
+  button { font: inherit; cursor: pointer; border: 0; border-radius: 12px; }
+  .btn { width: 100%; padding: 14px 16px; font-size: 17px; font-weight: 700; background: var(--blue); color: #fff; margin-top: 10px; }
+  .btn.secondary { background: var(--panel2); color: var(--text); border: 1px solid var(--line); }
+  .btn.good { background: var(--green); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .cats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .cat { text-align: left; padding: 14px; background: var(--panel2); border: 2px solid var(--line); color: var(--text); min-height: 92px; }
+  .cat .e { font-size: 26px; line-height: 1; }
+  .cat .n { display: block; font-weight: 700; margin-top: 8px; }
+  .cat .c { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .cat.sel { border-color: var(--gold); background: #2d2615; }
+  .cat.done { opacity: .5; }
+  .seg { display: flex; gap: 8px; }
+  .seg button { flex: 1; padding: 10px 0; background: var(--panel2); color: var(--text); border: 2px solid var(--line); font-weight: 700; }
+  .seg button.sel { border-color: var(--gold); background: #2d2615; }
+  .row { display: flex; align-items: center; gap: 10px; }
+  .toplink { color: var(--muted); text-decoration: none; font-size: 14px; }
+  .results { list-style: none; padding: 0; margin: 8px 0 0; }
+  .results li { display: flex; gap: 10px; padding: 9px 12px; background: var(--panel2); border-radius: 10px; margin-bottom: 6px; }
+  .results li.ok b { color: #5fd39a; } .results li.no { opacity: .6; }
+  .err { color: #ff8a8d; margin-top: 8px; min-height: 1.2em; }
+
+  /* Full-screen play surface */
+  #play { position: fixed; inset: 0; display: none; flex-direction: column; background: #121a33; z-index: 10;
+    user-select: none; -webkit-user-select: none; touch-action: manipulation; transition: background .15s; }
+  #play.on { display: flex; }
+  #play.correct { background: #1f7a4d; } #play.pass { background: #9a2f33; } #play.wait { background: #121a33; }
+  .ptop { display: flex; justify-content: space-between; align-items: center; padding: max(10px, env(safe-area-inset-top)) 18px 0; font-weight: 800; font-size: 22px; }
+  .ptop .x { background: rgba(255,255,255,.12); color: #fff; padding: 6px 12px; font-size: 15px; font-weight: 600; }
+  .word { flex: 1 1 0; min-height: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; text-align: center; padding: 10px 24px;
+    font-weight: 900; line-height: 1.05; letter-spacing: -.5px; word-break: break-word; }
+  .pbot { display: flex; gap: 12px; padding: 0 16px max(14px, env(safe-area-inset-bottom)); }
+  .pbot button { flex: 1; padding: 16px 0; font-size: 20px; font-weight: 800; color: #fff; }
+  .pbot .p { background: rgba(229,72,77,.85); } .pbot .c { background: rgba(48,164,108,.95); }
+  .hint { text-align: center; font-size: 13px; opacity: .75; padding: 0 12px 6px; }
+</style>
+</head>
+<body>
+<main id="app"></main>
+
+<div id="play" aria-live="polite">
+  <div class="ptop"><span id="pTime">60</span><span id="pScore">0 ✓</span><button class="x" id="pQuit">End</button></div>
+  <div class="word" id="pWord"></div>
+  <div class="hint" id="pHint"></div>
+  <div class="pbot" id="pButtons"><button class="p" id="pPass">✗ Pass</button><button class="c" id="pCorrect">✓ Correct</button></div>
+</div>
+
+<script src="headsup-words.js"></script>
+<script>
+(() => {
+'use strict';
+const W = window.GUESS_WORDS;
+const CATEGORIES = [
+  { id: 'hindi-movies',   emoji: '🎬', name: 'Hindi Movies',     lists: ['hindiMovies'] },
+  { id: 'english-movies', emoji: '🍿', name: 'English Movies',   lists: ['englishMovies'] },
+  { id: 'movies',         emoji: '🎞️', name: 'All Movies',       lists: ['hindiMovies', 'englishMovies'] },
+  { id: 'bollywood',      emoji: '🌟', name: 'Bollywood Actors', lists: ['bollywoodActors'] },
+  { id: 'hollywood',      emoji: '⭐', name: 'Hollywood Actors', lists: ['hollywoodActors'] },
+  { id: 'actors',         emoji: '🎭', name: 'All Actors',       lists: ['bollywoodActors', 'hollywoodActors'] },
+];
+
+/* ---------- storage: names already shown never come back ---------- */
+const store = {
+  get(k, d) { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+// A name is identified by its list + text, so "All Movies" and "Hindi Movies" share history.
+const keyOf = (list, name) => list + '|' + name;
+let used = new Set(store.get('guessit.used', []));
+const saveUsed = () => store.set('guessit.used', [...used]);
+const poolOf = cat => cat.lists.flatMap(l => W[l].map(n => ({ key: keyOf(l, n), name: n })));
+const remaining = cat => poolOf(cat).filter(w => !used.has(w.key));
+
+/* ---------- randomness ---------- */
+const randInt = n => { const b = new Uint32Array(1), max = Math.floor(0x100000000 / n) * n; do { crypto.getRandomValues(b); } while (b[0] >= max); return b[0] % n; };
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = randInt(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+/* ---------- sound & buzz ---------- */
+let audio = null;
+function beep(freq, ms, type = 'sine', vol = 0.25) {
+  try {
+    audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+    const o = audio.createOscillator(), g = audio.createGain();
+    o.type = type; o.frequency.value = freq; g.gain.value = vol;
+    o.connect(g); g.connect(audio.destination);
+    const t = audio.currentTime; g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + ms / 1000);
+    o.start(t); o.stop(t + ms / 1000);
+  } catch {}
+}
+const buzz = p => { try { navigator.vibrate && navigator.vibrate(p); } catch {} };
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/* ---------- settings ---------- */
+let settings = Object.assign({ cat: 'hindi-movies', time: 60, tilt: true }, store.get('guessit.settings', {}));
+const saveSettings = () => store.set('guessit.settings', settings);
+
+/* ---------- menu ---------- */
+const $app = document.getElementById('app');
+function renderMenu(msg = '') {
+  const cats = CATEGORIES.map(c => {
+    const left = remaining(c).length, total = poolOf(c).length;
+    return `<button class="cat ${c.id === settings.cat ? 'sel' : ''} ${left ? '' : 'done'}" data-cat="${c.id}">
+      <span class="e">${c.emoji}</span><span class="n">${c.name}</span>
+      <span class="c">${left ? `${left} of ${total} left` : 'All played!'}</span></button>`;
+  }).join('');
+  const cur = CATEGORIES.find(c => c.id === settings.cat);
+  const curLeft = remaining(cur).length;
+  $app.innerHTML = `
+    <div class="row" style="justify-content:space-between"><a class="toplink" href="/">← Mafia</a></div>
+    <div class="center">
+      <img src="guessit-logo.svg" alt="" width="92" height="92" style="display:block;margin:6px auto 0;border-radius:22px">
+      <h1>Guess It!</h1>
+      <p class="muted" style="margin:0">Hold the phone on your forehead. Friends act it out — you guess!</p>
+    </div>
+    <div class="card">
+      <div class="label">Pick a category</div>
+      <div class="cats">${cats}</div>
+    </div>
+    <div class="card">
+      <div class="label">Round length</div>
+      <div class="seg">${[60, 90, 120].map(t => `<button data-time="${t}" class="${settings.time === t ? 'sel' : ''}">${t}s</button>`).join('')}</div>
+      <div class="label" style="margin-top:14px">Controls</div>
+      <div class="seg">
+        <button data-tilt="1" class="${settings.tilt ? 'sel' : ''}">Tilt phone</button>
+        <button data-tilt="0" class="${settings.tilt ? '' : 'sel'}">Tap buttons</button>
+      </div>
+      <p class="muted small" style="margin:8px 0 0">${settings.tilt ? 'Tilt the phone <b>down</b> for correct, <b>up</b> to pass. The buttons work too.' : 'Tap ✓ Correct or ✗ Pass on screen.'}</p>
+    </div>
+    <button class="btn good" id="start" ${curLeft ? '' : 'disabled'}>▶ Play ${esc(cur.name)}</button>
+    ${curLeft ? '' : `<button class="btn secondary" id="reset">Reshuffle ${esc(cur.name)} (start over)</button>`}
+    <div class="err center">${esc(msg)}</div>
+    <div class="card small muted">
+      <b style="color:var(--text)">How to play</b>
+      <ol style="padding-left:18px;margin:8px 0 0">
+        <li>Pick a category and tap Play. Hold the phone sideways on your forehead, screen facing your friends.</li>
+        <li>Friends give clues or act it out — no saying the name!</li>
+        <li>Guessed it? Tilt the phone <b>down</b>. Want to skip? Tilt it <b>up</b>.</li>
+        <li>Score as many as you can before time runs out, then pass the phone on.</li>
+      </ol>
+      <p style="margin:10px 0 0">Names never repeat on this phone: every name shown is used up, until a category is fully played and you reshuffle it.</p>
+    </div>`;
+  $app.querySelectorAll('[data-cat]').forEach(b => b.onclick = () => { settings.cat = b.dataset.cat; saveSettings(); renderMenu(); });
+  $app.querySelectorAll('[data-time]').forEach(b => b.onclick = () => { settings.time = +b.dataset.time; saveSettings(); renderMenu(); });
+  $app.querySelectorAll('[data-tilt]').forEach(b => b.onclick = () => { settings.tilt = b.dataset.tilt === '1'; saveSettings(); renderMenu(); });
+  const st = document.getElementById('start'); if (st) st.onclick = () => startRound(cur);
+  const rs = document.getElementById('reset');
+  if (rs) rs.onclick = () => {
+    if (!confirm(`Start ${cur.name} over? Names from it can come up again.`)) return;
+    poolOf(cur).forEach(w => used.delete(w.key)); saveUsed(); renderMenu();
+  };
+}
+
+/* ---------- a round ---------- */
+const $play = document.getElementById('play'), $word = document.getElementById('pWord'),
+  $time = document.getElementById('pTime'), $score = document.getElementById('pScore'), $hint = document.getElementById('pHint');
+let R = null; // current round
+
+function fitWord() {
+  // Biggest font that fits the space between the timer and the buttons
+  const h = $word.clientHeight, w = $word.clientWidth;
+  let size = Math.max(18, Math.min(h * 0.6, 160));
+  $word.style.fontSize = size + 'px';
+  while (size > 18 && ($word.scrollWidth > w + 1 || $word.scrollHeight > h + 1)) {
+    size -= 4; $word.style.fontSize = size + 'px';
+  }
+}
+
+async function startRound(cat) {
+  const deck = shuffle(remaining(cat));
+  if (!deck.length) return renderMenu('This category is fully played. Reshuffle it or pick another.');
+  // iPhones (and newer Chrome) ask permission to read the tilt sensor; it must be asked from a tap.
+  // If it's refused, this round just uses the buttons — the setting itself stays as chosen.
+  let tilt = settings.tilt, tiltRefused = false;
+  if (tilt && window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    try { if ((await DeviceOrientationEvent.requestPermission()) !== 'granted') { tilt = false; tiltRefused = true; } }
+    catch { tilt = false; tiltRefused = true; }
+  }
+  R = { cat, deck, tilt, tiltRefused, i: -1, results: [], left: settings.time, state: 'countdown', armed: false, gotSensor: false, timer: null, lock: false };
+  // Freeze the page behind the game so nothing can scroll or shift on phones.
+  window.scrollTo(0, 0);
+  document.documentElement.style.overflow = document.body.style.overflow = 'hidden';
+  $play.className = 'on wait';
+  try { await document.documentElement.requestFullscreen(); } catch {}
+  try { await screen.orientation.lock('landscape'); } catch {}
+  try { R.wake = await navigator.wakeLock.request('screen'); } catch {}
+  $time.textContent = R.left; $score.textContent = '0 ✓';
+  $hint.textContent = R.tiltRefused ? 'Motion access was not allowed — use the buttons.' : R.tilt ? 'Phone on your forehead, screen facing out' : '';
+  let n = 3;
+  const tick = () => {
+    if (!R || R.state !== 'countdown') return;
+    if (n > 0) { $word.textContent = n; fitWord(); beep(660, 120); n--; setTimeout(tick, 900); }
+    else { R.state = 'play'; beep(990, 200); nextWord(); R.timer = setInterval(clock, 1000); }
+  };
+  $word.textContent = 'Get ready'; fitWord();
+  setTimeout(tick, 900);
+  setTimeout(() => { if (R && R.tilt && !R.gotSensor) $hint.textContent = 'Tilt not detected on this phone — use the buttons.'; }, 4500);
+}
+
+function nextWord() {
+  R.i++;
+  if (R.i >= R.deck.length) { $word.textContent = 'No more names!'; fitWord(); return endRound(); }
+  const w = R.deck[R.i];
+  used.add(w.key); saveUsed();         // shown = used up, so it never repeats
+  $word.textContent = w.name; fitWord();
+  $play.className = 'on';
+  $hint.textContent = R.tilt ? 'Tilt down = ✓   ·   Tilt up = ✗' : R.tiltRefused ? 'Motion access was not allowed — use the buttons.' : '';
+}
+
+function answer(ok) {
+  if (!R || R.state !== 'play' || R.lock) return;
+  R.lock = true; R.armed = false;
+  R.results.push({ name: R.deck[R.i].name, ok });
+  $score.textContent = R.results.filter(r => r.ok).length + ' ✓';
+  $play.className = 'on ' + (ok ? 'correct' : 'pass');
+  $word.textContent = ok ? 'Correct!' : 'Pass'; fitWord();
+  ok ? (beep(880, 140), setTimeout(() => beep(1320, 180), 120), buzz(60)) : (beep(220, 260, 'square', 0.15), buzz([40, 40, 40]));
+  setTimeout(() => { if (R && R.state === 'play') { R.lock = false; nextWord(); } }, 750);
+}
+
+function clock() {
+  if (!R) return;
+  R.left--; $time.textContent = R.left;
+  if (R.left <= 5 && R.left > 0) beep(520, 90);
+  if (R.left <= 0) endRound();
+}
+
+function endRound() {
+  if (!R || R.state === 'over') return;
+  // A name that was on screen when time ran out counts as passed.
+  if (R.state === 'play' && !R.lock && R.deck[R.i]) R.results.push({ name: R.deck[R.i].name, ok: false });
+  R.state = 'over'; clearInterval(R.timer);
+  beep(300, 500, 'sawtooth', 0.15); buzz(300);
+  $word.textContent = "Time's up!"; fitWord(); $play.className = 'on wait';
+  setTimeout(showResults, 1100);
+}
+
+async function closePlay() {
+  $play.className = '';
+  document.documentElement.style.overflow = document.body.style.overflow = '';
+  try { R && R.wake && await R.wake.release(); } catch {}
+  try { screen.orientation.unlock(); } catch {}
+  try { document.fullscreenElement && await document.exitFullscreen(); } catch {}
+}
+
+async function showResults() {
+  const r = R; await closePlay();
+  const score = r.results.filter(x => x.ok).length;
+  const left = remaining(r.cat).length;
+  $app.innerHTML = `
+    <div class="card center">
+      <div style="font-size:54px">${score >= 10 ? '🏆' : score >= 5 ? '🎉' : '👏'}</div>
+      <h2 style="font-size:28px">${score} correct</h2>
+      <p class="muted">${esc(r.cat.name)} · ${r.results.length} names seen · ${left} left in this category</p>
+      <button class="btn good" id="again" ${left ? '' : 'disabled'}>▶ Next player</button>
+      <button class="btn secondary" id="menu">Change category</button>
+    </div>
+    <div class="card"><div class="label">This round</div>
+      <ul class="results">${r.results.map(x => `<li class="${x.ok ? 'ok' : 'no'}"><b>${x.ok ? '✓' : '✗'}</b><span>${esc(x.name)}</span></li>`).join('') || '<li class="no">No names this round</li>'}</ul>
+    </div>`;
+  document.getElementById('again').onclick = () => startRound(r.cat);
+  document.getElementById('menu').onclick = () => renderMenu();
+  R = null;
+  window.scrollTo(0, 0);
+}
+
+document.getElementById('pCorrect').onclick = () => answer(true);
+document.getElementById('pPass').onclick = () => answer(false);
+document.getElementById('pQuit').onclick = () => { if (R && R.state !== 'over') endRound(); };
+window.addEventListener('keydown', e => {
+  if (!R) return;
+  if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === ' ') answer(true);
+  if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') answer(false);
+});
+window.addEventListener('resize', () => { if (R) fitWord(); });
+
+/* ---------- tilt detection ----------
+   Uses the vertical component of the screen's facing direction: about 0 when the phone is
+   upright on your forehead, negative when the screen tips toward the floor (tilt down =
+   correct), positive when it tips toward the ceiling (tilt up = pass). This works the same
+   on iPhone and Android and in either landscape direction. */
+window.addEventListener('deviceorientation', e => {
+  if (!R || !R.tilt || e.beta == null || e.gamma == null) return;
+  if (!R.gotSensor) { R.gotSensor = true; }
+  const rad = Math.PI / 180;
+  const up = Math.cos(e.beta * rad) * Math.cos(e.gamma * rad); // +1 face up … 0 upright … -1 face down
+  if (R.state !== 'play' || R.lock) return;
+  if (Math.abs(up) < 0.35) { R.armed = true; return; }       // back in neutral: ready for the next tilt
+  if (!R.armed) return;
+  if (up < -0.6) answer(true);
+  else if (up > 0.6) answer(false);
+});
+
+renderMenu();
+window.__guess = { get round() { return R; }, answer, used: () => used };
+})();
+</script>
+</body>
+</html>

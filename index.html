@@ -275,6 +275,11 @@ function renderHome(error = '') {
       <button id="create" class="secondary">Create a new room</button>
       <div class="err" id="err">${esc(error)}</div>
     </div>
+    <a href="/headsup" class="card" style="display:flex;align-items:center;gap:14px;text-decoration:none;color:var(--text);border-color:#5a4a1f;background:linear-gradient(135deg,#2d2615,#17171f)">
+      <img src="guessit-logo.svg" alt="" width="52" height="52" style="border-radius:12px;flex:none">
+      <span style="flex:1"><b style="font-size:17px">Play Guess It!</b><br><span class="muted small">Phone-on-forehead guessing game · Movies &amp; actors, Hindi &amp; English</span></span>
+      <span style="font-size:22px">›</span>
+    </a>
     <div class="card small muted">
       <b style="color:var(--text)">How to play</b>
       <ol class="rules" style="padding-left:18px;margin:8px 0 0">

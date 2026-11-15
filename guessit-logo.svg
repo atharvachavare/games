@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Guess It logo">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b2a55"/>
+      <stop offset="1" stop-color="#0d0d12"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="url(#bg)"/>
+  <!-- phone held sideways, slightly tilted -->
+  <g transform="rotate(-12 64 64)">
+    <rect x="18" y="38" width="92" height="54" rx="10" fill="#f5b544"/>
+    <rect x="25" y="44" width="78" height="42" rx="5" fill="#2d2615"/>
+    <text x="64" y="78" text-anchor="middle" font-family="system-ui, -apple-system, Segoe UI, Roboto, sans-serif" font-size="38" font-weight="900" fill="#f5b544">?</text>
+  </g>
+  <!-- sparkles -->
+  <path d="M100 20 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3z" fill="#ececf3"/>
+  <path d="M24 98 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z" fill="#ececf3" opacity=".8"/>
+</svg>

@@ -28,3 +28,11 @@ then open http://localhost:3000 in several browser windows (use private windows 
 1. Import the repo (framework preset "Other", no build command).
 2. In the project: **Storage → Create Database** → pick **Upstash for Redis** or **Redis** (free plan) → connect it to the project. Either works: the server picks up Upstash REST settings (`KV_REST_API_URL`/`KV_REST_API_TOKEN`, any custom prefix, or `UPSTASH_REDIS_REST_URL`/`_TOKEN`) or a Redis connection string (`REDIS_URL`/`KV_URL`).
 3. Redeploy (settings only reach deployments made after connecting).
+
+# Guess It! — forehead guessing game
+
+`/headsup` (`headsup.html`, word lists in `headsup-words.js`). A single-phone party game: hold the phone sideways on your forehead, friends give clues, tilt down for correct and up to pass (or tap the buttons).
+
+- Categories: Hindi Movies, English Movies, All Movies, Bollywood Actors, Hollywood Actors, All Actors — about 1,340 names in total.
+- Names never repeat on a phone: every name shown is remembered in the browser's local storage, shared across categories (a Hindi movie seen in "Hindi Movies" won't come up in "All Movies"). When a category is used up, it can be reshuffled.
+- Needs no server or internet connection once the page has loaded.

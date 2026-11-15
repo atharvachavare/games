@@ -11,7 +11,8 @@ const port = process.env.PORT || 3000;
 http.createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost');
   if (url.pathname === '/api/room') return room(req, res);
-  const file = path.join(__dirname, url.pathname === '/' ? 'index.html' : path.normalize(url.pathname));
+  let file = path.join(__dirname, url.pathname === '/' ? 'index.html' : path.normalize(url.pathname));
+  if (!path.extname(file) && fs.existsSync(file + '.html')) file += '.html'; // same as Vercel cleanUrls
   if (!file.startsWith(__dirname) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.statusCode = 404; return res.end('Not found'); }
   res.setHeader('Content-Type', TYPES[path.extname(file)] || 'application/octet-stream');
   fs.createReadStream(file).pipe(res);
