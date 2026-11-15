@@ -30,11 +30,17 @@
   .btn.good { background: var(--green); }
   .btn:disabled { opacity: .45; cursor: not-allowed; }
   .cats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .cat { text-align: left; padding: 14px; background: var(--panel2); border: 2px solid var(--line); color: var(--text); min-height: 92px; }
+  .cat { position: relative; overflow: hidden; text-align: left; padding: 14px; color: #fff; min-height: 104px;
+    border: 2px solid transparent; background: linear-gradient(150deg, var(--c1), var(--c2)); transition: transform .12s; }
+  .cat:active { transform: scale(.97); }
+  .cat::after { content: attr(data-emoji); position: absolute; right: -8px; bottom: -14px; font-size: 64px; opacity: .18; transform: rotate(-12deg); }
+  .cat .t { display: block; font-size: 12px; opacity: .85; margin-top: 3px; line-height: 1.3; }
+  .sec { font-size: 13px; font-weight: 800; color: var(--muted); margin: 18px 2px 8px; }
+  .sec:first-child { margin-top: 0; }
   .cat .e { font-size: 26px; line-height: 1; }
   .cat .n { display: block; font-weight: 700; margin-top: 8px; }
-  .cat .c { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .cat.sel { border-color: var(--gold); background: #2d2615; }
+  .cat .c { display: inline-block; font-size: 11px; font-weight: 700; margin-top: 8px; padding: 2px 8px; border-radius: 99px; background: rgba(0,0,0,.28); }
+  .cat.sel { border-color: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,.25), 0 8px 24px var(--c2); }
   .cat.done { opacity: .5; }
   .seg { display: flex; gap: 8px; }
   .seg button { flex: 1; padding: 10px 0; background: var(--panel2); color: var(--text); border: 2px solid var(--line); font-weight: 700; }
@@ -50,11 +56,25 @@
   #play { position: fixed; inset: 0; display: none; flex-direction: column; background: #121a33; z-index: 10;
     user-select: none; -webkit-user-select: none; touch-action: manipulation; transition: background .15s; }
   #play.on { display: flex; }
-  #play.correct { background: #1f7a4d; } #play.pass { background: #9a2f33; } #play.wait { background: #121a33; }
+  #play { background: var(--pc, #121a33); }
+  #play.correct { background: #1f9a5d; } #play.pass { background: #b0353a; }
+  .tbar { height: 6px; margin: 8px 18px 0; border-radius: 99px; background: rgba(255,255,255,.18); overflow: hidden; }
+  .tbar i { display: block; height: 100%; width: 100%; background: #fff; border-radius: 99px; transition: width 1s linear, background .3s; }
+  #play.hurry .tbar i { background: #ffd166; } #play.hurry #pTime { color: #ffd166; animation: beat .5s infinite alternate; }
+  @keyframes beat { to { transform: scale(1.25); } }
+  .word.pop { animation: pop .35s cubic-bezier(.2,1.6,.4,1); }
+  @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  #play.pass .word { animation: shake .35s; }
+  @keyframes shake { 20%, 60% { transform: translateX(-14px); } 40%, 80% { transform: translateX(14px); } }
+  .confetti { position: fixed; top: 50%; left: 50%; width: 10px; height: 14px; border-radius: 2px; pointer-events: none; z-index: 20;
+    animation: fly 1s ease-out forwards; }
+  @keyframes fly { to { transform: translate(var(--dx), var(--dy)) rotate(var(--r)); opacity: 0; } }
+  .ccat { display: inline-block; font-size: 14px; font-weight: 700; padding: 3px 10px; border-radius: 99px; background: rgba(255,255,255,.18); }
+  @media (prefers-reduced-motion: reduce) { .word.pop, #play.pass .word, #play.hurry #pTime { animation: none; } .confetti { display: none; } }
   .ptop { display: flex; justify-content: space-between; align-items: center; padding: max(10px, env(safe-area-inset-top)) 18px 0; font-weight: 800; font-size: 22px; }
   .ptop .x { background: rgba(255,255,255,.12); color: #fff; padding: 6px 12px; font-size: 15px; font-weight: 600; }
   .word { flex: 1 1 0; min-height: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; text-align: center; padding: 10px 24px;
-    font-weight: 900; line-height: 1.05; letter-spacing: -.5px; word-break: break-word; }
+    font-weight: 900; line-height: 1.05; letter-spacing: -.5px; overflow-wrap: normal; word-break: normal; }
   .pbot { display: flex; gap: 12px; padding: 0 16px max(14px, env(safe-area-inset-bottom)); }
   .pbot button { flex: 1; padding: 16px 0; font-size: 20px; font-weight: 800; color: #fff; }
   .pbot .p { background: rgba(229,72,77,.85); } .pbot .c { background: rgba(48,164,108,.95); }
@@ -65,25 +85,72 @@
 <main id="app"></main>
 
 <div id="play" aria-live="polite">
-  <div class="ptop"><span id="pTime">60</span><span id="pScore">0 ✓</span><button class="x" id="pQuit">End</button></div>
+  <div class="ptop"><span id="pTime">60</span><span class="ccat" id="pCat"></span><span id="pScore">0 ✓</span><button class="x" id="pQuit">End</button></div>
+  <div class="tbar"><i id="pBar"></i></div>
   <div class="word" id="pWord"></div>
   <div class="hint" id="pHint"></div>
   <div class="pbot" id="pButtons"><button class="p" id="pPass">✗ Pass</button><button class="c" id="pCorrect">✓ Correct</button></div>
 </div>
 
 <script src="headsup-words.js"></script>
+<script src="headsup-words-more.js"></script>
 <script>
 (() => {
 'use strict';
 const W = window.GUESS_WORDS;
-const CATEGORIES = [
-  { id: 'hindi-movies',   emoji: '🎬', name: 'Hindi Movies',     lists: ['hindiMovies'] },
-  { id: 'english-movies', emoji: '🍿', name: 'English Movies',   lists: ['englishMovies'] },
-  { id: 'movies',         emoji: '🎞️', name: 'All Movies',       lists: ['hindiMovies', 'englishMovies'] },
-  { id: 'bollywood',      emoji: '🌟', name: 'Bollywood Actors', lists: ['bollywoodActors'] },
-  { id: 'hollywood',      emoji: '⭐', name: 'Hollywood Actors', lists: ['hollywoodActors'] },
-  { id: 'actors',         emoji: '🎭', name: 'All Actors',       lists: ['bollywoodActors', 'hollywoodActors'] },
+/* ---------- randomness ---------- */
+const randInt = n => { const b = new Uint32Array(1), max = Math.floor(0x100000000 / n) * n; do { crypto.getRandomValues(b); } while (b[0] >= max); return b[0] % n; };
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = randInt(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+const ALL_LISTS = Object.keys(W);
+const SECTIONS = [
+  { name: 'Movies & TV', cats: [
+    { id: 'hindi-movies',   emoji: '🎬', name: 'Hindi Movies',      hue: 12,  tag: 'Picture abhi baaki hai!', lists: ['hindiMovies'] },
+    { id: 'english-movies', emoji: '🍿', name: 'English Movies',    hue: 210, tag: 'Lights, camera, guess!', lists: ['englishMovies'] },
+    { id: 'movies',         emoji: '🎞️', name: 'All Movies',        hue: 330, tag: 'Bollywood + Hollywood', lists: ['hindiMovies', 'englishMovies'] },
+    { id: 'characters',     emoji: '🦹', name: 'Movie Characters',  hue: 280, tag: 'Kitne aadmi the?', lists: ['movieCharacters'] },
+    { id: 'tv',             emoji: '📺', name: 'TV & Web Series',   hue: 190, tag: 'Binge-watchers only', lists: ['tvShows'] },
+    { id: 'songs',          emoji: '🎶', name: 'Bollywood Songs',   hue: 300, tag: 'Hum them, don\'t sing the words!', lists: ['bollywoodSongs'] },
+  ] },
+  { name: 'Stars', cats: [
+    { id: 'bollywood',      emoji: '🌟', name: 'Bollywood Actors',  hue: 40,  tag: 'Filmy duniya ke sitaare', lists: ['bollywoodActors'] },
+    { id: 'hollywood',      emoji: '⭐', name: 'Hollywood Actors',  hue: 230, tag: 'Walk of fame', lists: ['hollywoodActors'] },
+    { id: 'actors',         emoji: '🎭', name: 'All Actors',        hue: 350, tag: 'Every star, everywhere', lists: ['bollywoodActors', 'hollywoodActors'] },
+    { id: 'singers',        emoji: '🎤', name: 'Singers & Musicians', hue: 265, tag: 'Mic drop moments', lists: ['singers'] },
+  ] },
+  { name: 'Sports & History', cats: [
+    { id: 'cricketers',     emoji: '🏏', name: 'Cricketers',        hue: 140, tag: 'Howzat!', lists: ['cricketers'] },
+    { id: 'sports',         emoji: '⚽', name: 'Sports Stars',      hue: 160, tag: 'Goal! Ace! Knockout!', lists: ['sportsStars'] },
+    { id: 'history',        emoji: '📜', name: 'Historical Figures', hue: 30, tag: 'Itihaas gawah hai', lists: ['historicalFigures'] },
+  ] },
+  { name: 'Just for fun', cats: [
+    { id: 'heroes',         emoji: '🦸', name: 'Heroes & Villains', hue: 0,   tag: 'With great power…', lists: ['superheroes'] },
+    { id: 'cartoons',       emoji: '🐭', name: 'Cartoons & Anime',  hue: 50,  tag: 'Childhood unlocked', lists: ['cartoons'] },
+    { id: 'animals',        emoji: '🐘', name: 'Animals',           hue: 95,  tag: 'Make the noise!', lists: ['animals'] },
+    { id: 'food',           emoji: '🍛', name: 'Food & Drinks',     hue: 25,  tag: 'Bhook lagi hai?', lists: ['food'] },
+    { id: 'places',         emoji: '🗺️', name: 'Famous Places',     hue: 200, tag: 'Duniya ghoom lo', lists: ['places'] },
+    { id: 'brands',         emoji: '🛍️', name: 'Brands',            hue: 320, tag: 'Say it like an ad', lists: ['brands'] },
+    { id: 'actions',        emoji: '💃', name: 'Act It Out',        hue: 175, tag: 'No talking — only acting!', lists: ['actions'] },
+    { id: 'jobs',           emoji: '👷', name: 'Jobs',              hue: 45,  tag: 'Kaam pe chalo', lists: ['jobs'] },
+  ] },
+  { name: 'Feeling brave?', cats: [
+    { id: 'mix',            emoji: '🎲', name: 'Everything Mix',    hue: 260, tag: 'Anything can come up!', lists: ALL_LISTS },
+  ] },
 ];
+const CATEGORIES = SECTIONS.flatMap(sec => sec.cats);
+const catColor = (c, l = 45, sat = 70) => `hsl(${c.hue} ${sat}% ${l}%)`;
+const pickOne = a => a[randInt(a.length)];
+const CHEERS = ['Shabaash!', 'Kya baat hai!', 'Boom!', 'Ekdum sahi!', 'Nailed it!', 'Jhakaas!', 'Too good!', 'Mast!', 'Sahi jawab!', 'Kamaal!'];
+const PASSES = ['Agla!', 'Chalo next!', 'Skip!', 'Arre yaar!', 'Koi baat nahi', 'Pass!', 'Next please!'];
+const TITLES = [
+  [0, '😅', 'Arre yaar!', 'Even the phone felt bad. Next time!'],
+  [1, '🙂', 'Warming up', 'Slow start, big finish… hopefully.'],
+  [4, '👏', 'Not bad!', 'Solid guessing. Respect.'],
+  [7, '🎉', 'Superstar!', 'The crowd is going wild.'],
+  [10, '🔥', 'Blockbuster!', 'Housefull performance!'],
+  [15, '🏆', 'Legend!', 'Is this phone even on your forehead?'],
+];
+
 
 /* ---------- storage: names already shown never come back ---------- */
 const store = {
@@ -93,13 +160,10 @@ const store = {
 // A name is identified by its list + text, so "All Movies" and "Hindi Movies" share history.
 const keyOf = (list, name) => list + '|' + name;
 let used = new Set(store.get('guessit.used', []));
+let best = store.get('guessit.best', {});
 const saveUsed = () => store.set('guessit.used', [...used]);
 const poolOf = cat => cat.lists.flatMap(l => W[l].map(n => ({ key: keyOf(l, n), name: n })));
 const remaining = cat => poolOf(cat).filter(w => !used.has(w.key));
-
-/* ---------- randomness ---------- */
-const randInt = n => { const b = new Uint32Array(1), max = Math.floor(0x100000000 / n) * n; do { crypto.getRandomValues(b); } while (b[0] >= max); return b[0] % n; };
-const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = randInt(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
 /* ---------- sound & buzz ---------- */
 let audio = null;
@@ -123,24 +187,25 @@ const saveSettings = () => store.set('guessit.settings', settings);
 /* ---------- menu ---------- */
 const $app = document.getElementById('app');
 function renderMenu(msg = '') {
-  const cats = CATEGORIES.map(c => {
+  const tile = c => {
     const left = remaining(c).length, total = poolOf(c).length;
-    return `<button class="cat ${c.id === settings.cat ? 'sel' : ''} ${left ? '' : 'done'}" data-cat="${c.id}">
-      <span class="e">${c.emoji}</span><span class="n">${c.name}</span>
-      <span class="c">${left ? `${left} of ${total} left` : 'All played!'}</span></button>`;
-  }).join('');
-  const cur = CATEGORIES.find(c => c.id === settings.cat);
+    return `<button class="cat ${c.id === settings.cat ? 'sel' : ''} ${left ? '' : 'done'}" data-cat="${c.id}" data-emoji="${c.emoji}"
+      style="--c1:${catColor(c, 42)};--c2:${catColor(c, 24, 60)}">
+      <span class="e">${c.emoji}</span><span class="n">${c.name}</span><span class="t">${esc(c.tag)}</span>
+      <span class="c">${left ? `${left} left` : 'All played!'}${best[c.id] ? ` · best ${best[c.id]}` : ''}</span></button>`;
+  };
+  const cats = SECTIONS.map(sec => `<div class="sec">${sec.name}</div><div class="cats">${sec.cats.map(tile).join('')}</div>`).join('');
+  const cur = CATEGORIES.find(c => c.id === settings.cat) || CATEGORIES[0];
   const curLeft = remaining(cur).length;
   $app.innerHTML = `
     <div class="row" style="justify-content:space-between"><a class="toplink" href="/">← Mafia</a></div>
     <div class="center">
       <img src="guessit-logo.svg" alt="" width="92" height="92" style="display:block;margin:6px auto 0;border-radius:22px">
       <h1>Guess It!</h1>
-      <p class="muted" style="margin:0">Hold the phone on your forehead. Friends act it out — you guess!</p>
+      <p class="muted" style="margin:0">Phone on your forehead. Friends act it out. You guess!<br><b style="color:var(--gold)">${CATEGORIES.length} categories · ${ALL_LISTS.reduce((n, l) => n + W[l].length, 0).toLocaleString()} names</b></p>
     </div>
     <div class="card">
-      <div class="label">Pick a category</div>
-      <div class="cats">${cats}</div>
+      ${cats}
     </div>
     <div class="card">
       <div class="label">Round length</div>
@@ -152,7 +217,7 @@ function renderMenu(msg = '') {
       </div>
       <p class="muted small" style="margin:8px 0 0">${settings.tilt ? 'Tilt the phone <b>down</b> for correct, <b>up</b> to pass. The buttons work too.' : 'Tap ✓ Correct or ✗ Pass on screen.'}</p>
     </div>
-    <button class="btn good" id="start" ${curLeft ? '' : 'disabled'}>▶ Play ${esc(cur.name)}</button>
+    <button class="btn good" id="start" ${curLeft ? '' : 'disabled'} style="background:linear-gradient(150deg,${catColor(cur, 45)},${catColor(cur, 28, 60)});font-size:19px;padding:16px">${cur.emoji} Play ${esc(cur.name)}</button>
     ${curLeft ? '' : `<button class="btn secondary" id="reset">Reshuffle ${esc(cur.name)} (start over)</button>`}
     <div class="err center">${esc(msg)}</div>
     <div class="card small muted">
@@ -161,11 +226,15 @@ function renderMenu(msg = '') {
         <li>Pick a category and tap Play. Hold the phone sideways on your forehead, screen facing your friends.</li>
         <li>Friends give clues or act it out — no saying the name!</li>
         <li>Guessed it? Tilt the phone <b>down</b>. Want to skip? Tilt it <b>up</b>.</li>
+        <li><b>Act It Out</b> and <b>Animals</b>: no talking — acting and noises only! <b>Bollywood Songs</b>: hum the tune.</li>
         <li>Score as many as you can before time runs out, then pass the phone on.</li>
       </ol>
       <p style="margin:10px 0 0">Names never repeat on this phone: every name shown is used up, until a category is fully played and you reshuffle it.</p>
     </div>`;
-  $app.querySelectorAll('[data-cat]').forEach(b => b.onclick = () => { settings.cat = b.dataset.cat; saveSettings(); renderMenu(); });
+  $app.querySelectorAll('[data-cat]').forEach(b => b.onclick = () => {
+    settings.cat = b.dataset.cat; saveSettings(); renderMenu();
+    const st = document.getElementById('start'); st && st.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
   $app.querySelectorAll('[data-time]').forEach(b => b.onclick = () => { settings.time = +b.dataset.time; saveSettings(); renderMenu(); });
   $app.querySelectorAll('[data-tilt]').forEach(b => b.onclick = () => { settings.tilt = b.dataset.tilt === '1'; saveSettings(); renderMenu(); });
   const st = document.getElementById('start'); if (st) st.onclick = () => startRound(cur);
@@ -180,12 +249,30 @@ function renderMenu(msg = '') {
 const $play = document.getElementById('play'), $word = document.getElementById('pWord'),
   $time = document.getElementById('pTime'), $score = document.getElementById('pScore'), $hint = document.getElementById('pHint');
 let R = null; // current round
+const $bar = document.getElementById('pBar');
+// Put text on the card with a little pop
+function show(text) {
+  $word.textContent = text; fitWord();
+  $word.classList.remove('pop'); void $word.offsetWidth; $word.classList.add('pop');
+}
+function confetti() {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const colors = ['#ffd166', '#06d6a0', '#ef476f', '#118ab2', '#ffffff', '#f78c6b'];
+  for (let i = 0; i < 28; i++) {
+    const d = document.createElement('i');
+    d.className = 'confetti';
+    const ang = Math.random() * Math.PI * 2, dist = 120 + Math.random() * 260;
+    d.style.cssText = `background:${colors[i % colors.length]};--dx:${Math.cos(ang) * dist}px;--dy:${Math.sin(ang) * dist}px;--r:${Math.random() * 720 - 360}deg`;
+    document.body.appendChild(d); setTimeout(() => d.remove(), 1100);
+  }
+}
 
 function fitWord() {
   // Biggest font that fits the space between the timer and the buttons
   const h = $word.clientHeight, w = $word.clientWidth;
   let size = Math.max(18, Math.min(h * 0.6, 160));
   $word.style.fontSize = size + 'px';
+  // Shrink until whole words fit (never split a word in the middle)
   while (size > 18 && ($word.scrollWidth > w + 1 || $word.scrollHeight > h + 1)) {
     size -= 4; $word.style.fontSize = size + 'px';
   }
@@ -201,7 +288,7 @@ async function startRound(cat) {
     try { if ((await DeviceOrientationEvent.requestPermission()) !== 'granted') { tilt = false; tiltRefused = true; } }
     catch { tilt = false; tiltRefused = true; }
   }
-  R = { cat, deck, tilt, tiltRefused, i: -1, results: [], left: settings.time, state: 'countdown', armed: false, gotSensor: false, timer: null, lock: false };
+  R = { cat, deck, tilt, tiltRefused, i: -1, results: [], left: settings.time, total: settings.time, state: 'countdown', armed: false, gotSensor: false, timer: null, lock: false };
   // Freeze the page behind the game so nothing can scroll or shift on phones.
   window.scrollTo(0, 0);
   document.documentElement.style.overflow = document.body.style.overflow = 'hidden';
@@ -210,14 +297,18 @@ async function startRound(cat) {
   try { await screen.orientation.lock('landscape'); } catch {}
   try { R.wake = await navigator.wakeLock.request('screen'); } catch {}
   $time.textContent = R.left; $score.textContent = '0 ✓';
+  $play.style.setProperty('--pc', `linear-gradient(160deg, ${catColor(cat, 32, 65)}, ${catColor(cat, 14, 55)})`);
+  document.getElementById('pCat').textContent = cat.emoji + ' ' + cat.name;
+  $bar.style.transition = 'none'; $bar.style.width = '100%'; void $bar.offsetWidth; $bar.style.transition = '';
   $hint.textContent = R.tiltRefused ? 'Motion access was not allowed — use the buttons.' : R.tilt ? 'Phone on your forehead, screen facing out' : '';
   let n = 3;
   const tick = () => {
     if (!R || R.state !== 'countdown') return;
-    if (n > 0) { $word.textContent = n; fitWord(); beep(660, 120); n--; setTimeout(tick, 900); }
-    else { R.state = 'play'; beep(990, 200); nextWord(); R.timer = setInterval(clock, 1000); }
+    if (n > 0) { show(n); beep(660, 120); n--; setTimeout(tick, 900); }
+    else if (n === 0) { show('Shuru!'); beep(990, 200); n--; setTimeout(tick, 600); }
+    else { R.state = 'play'; nextWord(); R.timer = setInterval(clock, 1000); }
   };
-  $word.textContent = 'Get ready'; fitWord();
+  show('Ready?');
   setTimeout(tick, 900);
   setTimeout(() => { if (R && R.tilt && !R.gotSensor) $hint.textContent = 'Tilt not detected on this phone — use the buttons.'; }, 4500);
 }
@@ -227,8 +318,8 @@ function nextWord() {
   if (R.i >= R.deck.length) { $word.textContent = 'No more names!'; fitWord(); return endRound(); }
   const w = R.deck[R.i];
   used.add(w.key); saveUsed();         // shown = used up, so it never repeats
-  $word.textContent = w.name; fitWord();
-  $play.className = 'on';
+  show(w.name);
+  $play.className = 'on' + (R.left <= 10 ? ' hurry' : '');
   $hint.textContent = R.tilt ? 'Tilt down = ✓   ·   Tilt up = ✗' : R.tiltRefused ? 'Motion access was not allowed — use the buttons.' : '';
 }
 
@@ -238,14 +329,16 @@ function answer(ok) {
   R.results.push({ name: R.deck[R.i].name, ok });
   $score.textContent = R.results.filter(r => r.ok).length + ' ✓';
   $play.className = 'on ' + (ok ? 'correct' : 'pass');
-  $word.textContent = ok ? 'Correct!' : 'Pass'; fitWord();
-  ok ? (beep(880, 140), setTimeout(() => beep(1320, 180), 120), buzz(60)) : (beep(220, 260, 'square', 0.15), buzz([40, 40, 40]));
+  show(ok ? pickOne(CHEERS) : pickOne(PASSES));
+  ok ? (beep(880, 140), setTimeout(() => beep(1320, 180), 120), buzz(60), confetti()) : (beep(220, 260, 'square', 0.15), buzz([40, 40, 40]));
   setTimeout(() => { if (R && R.state === 'play') { R.lock = false; nextWord(); } }, 750);
 }
 
 function clock() {
   if (!R) return;
   R.left--; $time.textContent = R.left;
+  $bar.style.width = (100 * R.left / settings.time) + '%';
+  if (R.left <= 10 && !R.lock) $play.classList.add('hurry');
   if (R.left <= 5 && R.left > 0) beep(520, 90);
   if (R.left <= 0) endRound();
 }
@@ -256,7 +349,7 @@ function endRound() {
   if (R.state === 'play' && !R.lock && R.deck[R.i]) R.results.push({ name: R.deck[R.i].name, ok: false });
   R.state = 'over'; clearInterval(R.timer);
   beep(300, 500, 'sawtooth', 0.15); buzz(300);
-  $word.textContent = "Time's up!"; fitWord(); $play.className = 'on wait';
+  show("Time's up!"); $play.className = 'on wait';
   setTimeout(showResults, 1100);
 }
 
@@ -272,11 +365,16 @@ async function showResults() {
   const r = R; await closePlay();
   const score = r.results.filter(x => x.ok).length;
   const left = remaining(r.cat).length;
+  const [, icon, title, line] = TITLES.filter(t => score >= t[0]).pop();
+  const newBest = score > 0 && score > (best[r.cat.id] || 0);
+  if (newBest) { best[r.cat.id] = score; store.set('guessit.best', best); }
   $app.innerHTML = `
-    <div class="card center">
-      <div style="font-size:54px">${score >= 10 ? '🏆' : score >= 5 ? '🎉' : '👏'}</div>
-      <h2 style="font-size:28px">${score} correct</h2>
-      <p class="muted">${esc(r.cat.name)} · ${r.results.length} names seen · ${left} left in this category</p>
+    <div class="card center" style="background:linear-gradient(160deg,${catColor(r.cat, 30, 60)},var(--panel) 70%);border-color:${catColor(r.cat, 35)}">
+      <div style="font-size:58px">${icon}</div>
+      <h2 style="font-size:30px;margin:4px 0 0">${title}</h2>
+      <div style="font-size:44px;font-weight:900;line-height:1.1;margin:6px 0">${score} <span style="font-size:20px;font-weight:700">correct</span></div>
+      <p style="margin:0">${line}${newBest ? ' <b style="color:var(--gold)">New best!</b>' : ''}</p>
+      <p class="muted small">${r.cat.emoji} ${esc(r.cat.name)} · ${r.results.length} names seen · ${left} left</p>
       <button class="btn good" id="again" ${left ? '' : 'disabled'}>▶ Next player</button>
       <button class="btn secondary" id="menu">Change category</button>
     </div>
@@ -284,6 +382,7 @@ async function showResults() {
       <ul class="results">${r.results.map(x => `<li class="${x.ok ? 'ok' : 'no'}"><b>${x.ok ? '✓' : '✗'}</b><span>${esc(x.name)}</span></li>`).join('') || '<li class="no">No names this round</li>'}</ul>
     </div>`;
   document.getElementById('again').onclick = () => startRound(r.cat);
+  if (newBest || score >= 7) confetti();
   document.getElementById('menu').onclick = () => renderMenu();
   R = null;
   window.scrollTo(0, 0);
