@@ -95,6 +95,7 @@
 <script src="headsup-words.js"></script>
 <script src="headsup-words-more.js"></script>
 <script src="headsup-words-marathi.js"></script>
+<script src="headsup-words-pop.js"></script>
 <script>
 (() => {
 'use strict';
@@ -111,6 +112,9 @@ const SECTIONS = [
     { id: 'movies',         emoji: '🎞️', name: 'All Movies',        hue: 330, tag: 'Bollywood + Hollywood', lists: ['hindiMovies', 'englishMovies'] },
     { id: 'characters',     emoji: '🦹', name: 'Movie Characters',  hue: 280, tag: 'Kitne aadmi the?', lists: ['movieCharacters'] },
     { id: 'tv',             emoji: '📺', name: 'TV & Web Series',   hue: 190, tag: 'Binge-watchers only', lists: ['tvShows'] },
+    { id: 'reality',        emoji: '🏝️', name: 'Reality TV',        hue: 170, tag: 'All the drama, desi + videshi', lists: ['realityShows', 'hindiRealityShows'] },
+    { id: 'hindi-reality',  emoji: '🏠', name: 'Hindi Reality Shows', hue: 5, tag: 'Bigg Boss chahte hain…', lists: ['hindiRealityShows'] },
+    { id: 'dialogues',      emoji: '🎙️', name: 'Movie Dialogues',   hue: 250, tag: 'Dialogue maar ke dikhao!', lists: ['movieDialogues'] },
     { id: 'songs',          emoji: '🎶', name: 'Bollywood Songs',   hue: 300, tag: 'Hum them, don\'t sing the words!', lists: ['bollywoodSongs'] },
   ] },
   { name: 'Stars', cats: [
@@ -118,6 +122,13 @@ const SECTIONS = [
     { id: 'hollywood',      emoji: '⭐', name: 'Hollywood Actors',  hue: 230, tag: 'Walk of fame', lists: ['hollywoodActors'] },
     { id: 'actors',         emoji: '🎭', name: 'All Actors',        hue: 350, tag: 'Every star, everywhere', lists: ['bollywoodActors', 'hollywoodActors'] },
     { id: 'singers',        emoji: '🎤', name: 'Singers & Musicians', hue: 265, tag: 'Mic drop moments', lists: ['singers'] },
+  ] },
+  { name: 'Internet & Trends', cats: [
+    { id: 'youtubers',      emoji: '▶️', name: 'YouTubers',         hue: 0,   tag: 'Like, share, subscribe!', lists: ['youtubers'] },
+    { id: 'influencers',    emoji: '🤳', name: 'Influencers',       hue: 315, tag: 'Link in bio', lists: ['influencers'] },
+    { id: 'memes',          emoji: '😂', name: 'Internet Memes',    hue: 55,  tag: 'Desi + global, all of it', lists: ['internetMemes', 'hindiMemes'] },
+    { id: 'hindi-memes',    emoji: '🤣', name: 'Hindi & Insta Memes', hue: 30, tag: 'Rasode mein kaun tha?', lists: ['hindiMemes'] },
+    { id: 'trends',         emoji: '📈', name: 'Viral Trends',      hue: 185, tag: 'Sab kar rahe hain!', lists: ['viralTrends'] },
   ] },
   { name: 'Sports & History', cats: [
     { id: 'cricketers',     emoji: '🏏', name: 'Cricketers',        hue: 140, tag: 'Howzat!', lists: ['cricketers'] },
@@ -128,6 +139,7 @@ const SECTIONS = [
     { id: 'heroes',         emoji: '🦸', name: 'Heroes & Villains', hue: 0,   tag: 'With great power…', lists: ['superheroes'] },
     { id: 'cartoons',       emoji: '🐭', name: 'Cartoons',          hue: 50,  tag: 'Childhood unlocked', lists: ['cartoons'] },
     { id: 'anime',          emoji: '🍥', name: 'Anime',             hue: 345, tag: 'Dattebayo!', lists: ['anime'] },
+    { id: 'pokemon',        emoji: '⚡', name: 'Pokémon',           hue: 52,  tag: 'Gotta guess \'em all!', lists: ['pokemon'] },
     { id: 'animals',        emoji: '🐘', name: 'Animals',           hue: 95,  tag: 'Make the noise!', lists: ['animals'] },
     { id: 'food',           emoji: '🍛', name: 'Food & Drinks',     hue: 25,  tag: 'Bhook lagi hai?', lists: ['food'] },
     { id: 'places',         emoji: '🗺️', name: 'Famous Places',     hue: 200, tag: 'Duniya ghoom lo', lists: ['places'] },
@@ -256,7 +268,7 @@ function renderMenu(msg = '') {
         <li>Pick a category and tap Play. Hold the phone sideways on your forehead, screen facing your friends.</li>
         <li>Friends give clues or act it out — no saying the name!</li>
         <li>Guessed it? Tilt the phone <b>down</b>. Want to skip? Tilt it <b>up</b>.</li>
-        <li><b>Act It Out</b> and <b>Animals</b>: no talking — acting and noises only! <b>Bollywood Songs</b>: hum the tune.</li>
+        <li><b>Act It Out</b> and <b>Animals</b>: no talking — acting and noises only! <b>Bollywood Songs</b>: hum the tune. <b>Movie Dialogues</b>: act out the scene, don't say the line!</li>
         <li>Score as many as you can before time runs out, then pass the phone on.</li>
       </ol>
       <p style="margin:10px 0 0">Names never repeat on this phone: every name shown is used up, until a category is fully played and you reshuffle it.</p>

@@ -149,7 +149,7 @@ Object.assign(window.GUESS_WORDS, {
     'That Time I Got Reincarnated as a Slime', 'Assassination Classroom', 'Food Wars!', 'Slam Dunk', 'Initial D',
     'Gintama', 'Berserk', "JoJo's Bizarre Adventure", 'Trigun', 'Boruto', 'Doraemon', 'Shinchan', 'Sailor Moon',
     // Characters
-    'Nobita', 'Shizuka', 'Gian', 'Suneo', 'Dekisugi', 'Pikachu', 'Ash Ketchum', 'Charizard', 'Team Rocket',
+    'Nobita', 'Shizuka', 'Gian', 'Suneo', 'Dekisugi', 'Ash Ketchum', 'Team Rocket',
     'Naruto', 'Sasuke', 'Sakura Haruno', 'Kakashi', 'Itachi', 'Hinata', 'Gaara', 'Jiraiya', 'Goku', 'Vegeta',
     'Gohan', 'Piccolo', 'Frieza', 'Luffy', 'Zoro', 'Nami', 'Sanji', 'Light Yagami', 'L (Death Note)', 'Ryuk',
     'Eren Yeager', 'Mikasa', 'Levi Ackerman', 'Armin', 'Tanjiro', 'Nezuko', 'Zenitsu', 'Inosuke', 'Rengoku',
@@ -162,16 +162,16 @@ Object.assign(window.GUESS_WORDS, {
   ],
 
   tvShows: [
-    'Kaun Banega Crorepati', 'Bigg Boss', 'Taarak Mehta Ka Ooltah Chashmah', 'Kyunki Saas Bhi Kabhi Bahu Thi',
+    'Taarak Mehta Ka Ooltah Chashmah', 'Kyunki Saas Bhi Kabhi Bahu Thi',
     'Kasautii Zindagii Kay', 'CID', 'Shaktimaan (TV)', 'Mahabharat', 'Ramayan', 'Hum Paanch', 'Sarabhai vs Sarabhai',
     'Khichdi', 'Office Office', 'Shrimaan Shrimati', 'Dekh Bhai Dekh', 'Malgudi Days', 'Byomkesh Bakshi',
     'Tu Tu Main Main', 'Baa Bahoo Aur Baby', 'Dill Mill Gayye', 'Kumkum Bhagya', 'Anupamaa', 'Naagin',
-    'Indian Idol', 'Roadies', 'Splitsvilla', 'Khatron Ke Khiladi', 'The Kapil Sharma Show',
-    'Comedy Nights with Kapil', 'Shark Tank India', 'Sacred Games', 'Mirzapur', 'Panchayat', 'The Family Man',
+    'The Kapil Sharma Show',
+    'Comedy Nights with Kapil', 'Sacred Games', 'Mirzapur', 'Panchayat', 'The Family Man',
     'Scam 1992', 'Kota Factory', 'Paatal Lok', 'Made in Heaven', 'Delhi Crime', 'Asur', 'Special Ops',
     'Aspirants', 'Gullak', 'TVF Pitchers', 'Permanent Roommates', 'Rocket Boys', 'Jubilee', 'Farzi',
     'Heeramandi', 'Kohrra', 'Aashram', 'Criminal Justice', 'Inside Edge', 'Four More Shots Please!',
-    'Little Things', 'Dance India Dance', "Sa Re Ga Ma Pa", 'Chandrakanta', 'Alif Laila', 'Vikram Aur Betaal',
+    'Little Things', 'Chandrakanta', 'Alif Laila', 'Vikram Aur Betaal',
     'Shararat', 'Hatim', 'Friends', 'The Office', 'Game of Thrones', 'Breaking Bad', 'Better Call Saul',
     'Stranger Things', 'Money Heist', 'Squid Game', 'The Crown', 'Sherlock', 'Dark', 'Narcos', 'Peaky Blinders',
     'The Big Bang Theory', 'How I Met Your Mother', 'Brooklyn Nine-Nine', 'Modern Family', 'Seinfeld',
@@ -180,7 +180,7 @@ Object.assign(window.GUESS_WORDS, {
     'The Last of Us', 'Succession', 'The Bear', 'Ted Lasso', 'Emily in Paris', 'Bridgerton', 'Lucifer',
     'Vikings', "Grey's Anatomy", 'Suits', 'The Sopranos', 'The Walking Dead', 'Westworld', 'Black Mirror',
     'Sex Education', 'Gossip Girl', 'Glee', 'Ozark', 'Chernobyl', 'Severance', 'Shōgun', 'The Good Place',
-    'Parks and Recreation', 'Mind Your Language', 'MasterChef', 'Shark Tank', "America's Got Talent",
+    'Parks and Recreation', 'Mind Your Language',
   ],
 
   singers: [
