@@ -94,6 +94,7 @@
 
 <script src="headsup-words.js"></script>
 <script src="headsup-words-more.js"></script>
+<script src="headsup-words-marathi.js"></script>
 <script>
 (() => {
 'use strict';
@@ -133,6 +134,12 @@ const SECTIONS = [
     { id: 'brands',         emoji: '🛍️', name: 'Brands',            hue: 320, tag: 'Say it like an ad', lists: ['brands'] },
     { id: 'actions',        emoji: '💃', name: 'Act It Out',        hue: 175, tag: 'No talking — only acting!', lists: ['actions'] },
     { id: 'jobs',           emoji: '👷', name: 'Jobs',              hue: 45,  tag: 'Kaam pe chalo', lists: ['jobs'] },
+  ] },
+  { name: 'Marathi', cats: [
+    { id: 'marathi-movies', emoji: '🎥', name: 'Marathi Movies',    hue: 22,  tag: 'Lai bhaari picture!', lists: ['marathiMovies'] },
+    { id: 'marathi-actors', emoji: '🌺', name: 'Marathi Actors',    hue: 335, tag: 'Aaple laadke kalakaar', lists: ['marathiActors'] },
+    { id: 'marathi-songs',  emoji: '🥁', name: 'Marathi Songs',     hue: 48,  tag: 'Vaajle ki baara!', lists: ['marathiSongs'] },
+    { id: 'marathi-mix',    emoji: '🚩', name: 'All Marathi',       hue: 15,  tag: 'Ekdum Marathi bana!', lists: ['marathiMovies', 'marathiActors', 'marathiSongs'] },
   ] },
   { name: 'Feeling brave?', cats: [
     { id: 'mix',            emoji: '🎲', name: 'Everything Mix',    hue: 260, tag: 'Anything can come up!', lists: ALL_LISTS },
@@ -175,8 +182,18 @@ let used = new Set(store.get('guessit.used', []));
 })();
 let best = store.get('guessit.best', {});
 const saveUsed = () => store.set('guessit.used', [...used]);
-const poolOf = cat => cat.lists.flatMap(l => W[l].map(n => ({ key: keyOf(l, n), name: n })));
-const remaining = cat => poolOf(cat).filter(w => !used.has(w.key));
+// Some names live in two lists (e.g. "Spider-Man" is a movie and a superhero). A name seen
+// anywhere counts as seen everywhere, and a category never holds the same name twice.
+const norm = n => n.toLowerCase();
+let usedNames;
+const refreshUsedNames = () => { usedNames = new Set([...used].map(k => norm(k.slice(k.indexOf('|') + 1)))); };
+refreshUsedNames();
+const poolOf = cat => {
+  const seen = new Set(), out = [];
+  for (const l of cat.lists) for (const n of W[l]) if (!seen.has(norm(n))) { seen.add(norm(n)); out.push({ key: keyOf(l, n), name: n }); }
+  return out;
+};
+const remaining = cat => poolOf(cat).filter(w => !usedNames.has(norm(w.name)));
 
 /* ---------- sound & buzz ---------- */
 let audio = null;
@@ -254,7 +271,10 @@ function renderMenu(msg = '') {
   const rs = document.getElementById('reset');
   if (rs) rs.onclick = () => {
     if (!confirm(`Start ${cur.name} over? Names from it can come up again.`)) return;
-    poolOf(cur).forEach(w => used.delete(w.key)); saveUsed(); renderMenu();
+    // Free every name in this category, whichever list it was seen under.
+    const names = new Set(poolOf(cur).map(w => norm(w.name)));
+    for (const k of [...used]) if (names.has(norm(k.slice(k.indexOf('|') + 1)))) used.delete(k);
+    saveUsed(); refreshUsedNames(); renderMenu();
   };
 }
 
@@ -330,7 +350,7 @@ function nextWord() {
   R.i++;
   if (R.i >= R.deck.length) { $word.textContent = 'No more names!'; fitWord(); return endRound(); }
   const w = R.deck[R.i];
-  used.add(w.key); saveUsed();         // shown = used up, so it never repeats
+  used.add(w.key); usedNames.add(norm(w.name)); saveUsed(); // shown = used up, so it never repeats
   show(w.name);
   $play.className = 'on' + (R.left <= 10 ? ' hurry' : '');
   $hint.textContent = R.tilt ? 'Tilt down = ✓   ·   Tilt up = ✗' : R.tiltRefused ? 'Motion access was not allowed — use the buttons.' : '';

@@ -80,7 +80,7 @@ Object.assign(window.GUESS_WORDS, {
     'Virus', 'Raju (Hera Pheri)', 'Baburao Ganpatrao Apte', 'Shyam (Hera Pheri)', 'Majnu Bhai', 'Uday Shetty',
     'Chulbul Pandey', 'Bajirao Singham', 'Raj (DDLJ)', 'Simran (DDLJ)', 'Geet (Jab We Met)', 'Poo (K3G)',
     'Rocky Bhai', 'Pushpa', 'Baahubali', 'Kattappa', 'Bhallaladeva', 'Gangubai', 'Kabir Singh', 'Rani (Queen)',
-    'Rocky Randhawa', 'Devdas', 'Paro', 'Chandramukhi', 'Anarkali', 'Crime Master Gogo', 'Kancha Cheena', 'Shakaal',
+    'Rocky Randhawa', 'Devdas', 'Paro', 'Chandramukhi (Devdas)', 'Anarkali', 'Crime Master Gogo', 'Kancha Cheena', 'Shakaal',
     'Vijay Dinanath Chauhan', 'Bhuvan', 'Sardar Khan', 'Faizal Khan', 'Kaleen Bhaiya', 'Guddu Pandit',
     'Munna Tripathi', 'Pathaan', 'Tiger (Salman Khan)', 'Bunty and Babli', 'Prem (Maine Pyar Kiya)', 'Mr. India',
     'Ghajini', 'Aditya (Jab We Met)', 'Naina (YJHD)', 'Bunny (YJHD)', 'Veeru Sahastrabuddhe', 'Mahavir Singh Phogat',
